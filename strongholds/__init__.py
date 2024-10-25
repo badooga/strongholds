@@ -1,4 +1,4 @@
-from .generate import stronghold_grid, generate_strongholds
+from .generate import generation_grid, generate_all
 from .geometry import rectpoint
-from .locate import closest_stronghold, strongholds_in_cone
+from .locate import closest_stronghold, points_in_cone
 from .probability import probability_heatmap

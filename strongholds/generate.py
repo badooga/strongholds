@@ -7,7 +7,7 @@ from .types import Iterable, Generator, RectCoordinates
 
 default_rng = np.random.default_rng(0)
 
-def stronghold_grid(ring_nums: Iterable | None = None) -> RectCoordinates:
+def generation_grid(ring_nums: Iterable | None = None) -> RectCoordinates:
     """Returns a grid of possible stronghold points in the supplied rings."""
 
     if ring_nums is None:
@@ -40,7 +40,7 @@ def generate_rings(ring_nums: Iterable, snap: bool = True,
 
     return np.concatenate([generate_ring(n, snap, rng) for n in ring_nums])
 
-def generate_strongholds(snap: bool = True, rng: Generator = default_rng) -> RectCoordinates:
-    """Generates the 128 random strongholds a world can have."""
+def generate_all(snap: bool = True, rng: Generator = default_rng) -> RectCoordinates:
+    """Generates all 128 random strongholds a world can have."""
 
     return generate_rings(range(8), snap, rng)
