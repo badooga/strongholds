@@ -43,4 +43,4 @@ def generate_rings(ring_nums: Iterable, snap: bool = True,
 def generate_strongholds(snap: bool = True, rng: Generator = default_rng) -> RectCoordinates:
     """Generates the 128 random strongholds a world can have."""
 
-    return np.concatenate([generate_ring(n, snap, rng) for n in range(8)])
+    return generate_rings(range(8), snap, rng)
