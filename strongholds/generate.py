@@ -1,11 +1,9 @@
-from typing import Iterable
-
 import numpy as np
 
 from . import chunk_math as cm
 from . import geometry as gm
 
-from .types import Generator, RectCoordinates
+from .types import Iterable, Generator, RectCoordinates
 
 default_rng = np.random.default_rng(0)
 
@@ -35,6 +33,12 @@ def generate_ring(ring_num: int, snap: bool = True,
     if snap:
         P = cm.snap_chunk(P) + 16 * rng.integers(-7, 8, (n, 2)) + 8
     return P
+
+def generate_rings(ring_nums: Iterable, snap: bool = True,
+                   rng: Generator = default_rng) -> RectCoordinates:
+    """Generates stronghold coordinates in given rings."""
+
+    return np.concatenate([generate_ring(n, snap, rng) for n in ring_nums])
 
 def generate_strongholds(snap: bool = True, rng: Generator = default_rng) -> RectCoordinates:
     """Generates the 128 random strongholds a world can have."""
