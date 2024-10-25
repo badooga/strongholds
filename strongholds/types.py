@@ -1,3 +1,5 @@
+from typing import Iterable
+
 import numpy as np
 import nptyping as npt
 
