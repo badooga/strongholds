@@ -12,7 +12,7 @@ def closest_stronghold(p: Point, strongholds: Coordinates) -> Point:
 
 def points_in_cone(p: Point, grid: Coordinates,
                    theta: ScalarLike, theta_err: ScalarLike = 0.05,
-                   error_is_relative: bool = True) -> Coordinates:
+                   error_is_relative: bool = False) -> Coordinates:
     """
     Finds the possible stronghold locations from an Eye of Ender throw.
     
