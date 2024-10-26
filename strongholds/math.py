@@ -20,16 +20,11 @@ def polarpoint(r: ScalarLike, phi: ScalarLike) -> Coordinates:
     return r * cis(phi)
 
 def to_xz(p: Coordinates) -> CoordinateTuples:
-    """Converts complex Coordinates to [x, z] arrays."""
+    """Converts complex Coordinates x + iz to array form [x, z]."""
 
     return p.view("(2,)float")
 
 # Eucldiean properties
-
-def distance(p1: Coordinates, p2: Coordinates) -> ScalarLike:
-    """Euclidean distance metric between two coordinates."""
-
-    return np.abs(p2 - p1)
 
 def radius(p: Coordinates) -> ScalarLike:
     """Finds the radius of given coordinates."""
@@ -40,6 +35,11 @@ def angle(p: Coordinates) -> ScalarLike:
     """Finds the polar angle of given coordinates."""
 
     return np.angle(p)
+
+def distance(p1: Coordinates, p2: Coordinates) -> ScalarLike:
+    """Euclidean distance metric between two coordinates."""
+
+    return radius(p2 - p1)
 
 # Other math
 
