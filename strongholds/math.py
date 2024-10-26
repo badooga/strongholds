@@ -1,8 +1,8 @@
 import numpy as np
 
-from .types import (ScalarLike, NSequence, Coordinates)
+from .types import Coordinates, CoordinateTuples, NSequence, ScalarLike
 
-# Create points
+# Create and manage points
 
 def cis(phi: ScalarLike) -> ScalarLike:
     """Computes the complex exponential of phi."""
@@ -18,6 +18,11 @@ def polarpoint(r: ScalarLike, phi: ScalarLike) -> Coordinates:
     """Creates Coordinates from r and phi values."""
 
     return r * cis(phi)
+
+def to_xz(p: Coordinates) -> CoordinateTuples:
+    """Converts complex Coordinates to [x, z] arrays."""
+
+    return p.view("(2,)float")
 
 # Eucldiean properties
 

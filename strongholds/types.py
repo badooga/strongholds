@@ -13,3 +13,6 @@ ScalarLike = Scalar | NSequence
 
 Point = npt.NDArray[npt.Shape["*"], npt.Complex]
 Coordinates = Point | npt.NDArray[npt.Shape["*, *"], npt.Complex]
+
+PointTuple = npt.NDArray[npt.Shape["[x, z]"], npt.Float]
+CoordinateTuples = PointTuple | npt.NDArray[npt.Shape["*, [x, z]"], npt.Float]

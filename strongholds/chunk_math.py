@@ -1,6 +1,6 @@
 import numpy as np
 
-from .math import radius, in_interval
+from .math import in_interval, radius, rectpoint, to_xz
 from .types import Coordinates, ScalarLike
 
 stronghold_count = (3, 6, 10, 15, 21, 28, 36, 9)
@@ -18,7 +18,8 @@ def to_radians(y_rot: ScalarLike):
 def snap_chunk(p: Coordinates) -> Coordinates:
     """Snaps coordinates to the northwest corner of the nearest chunk."""
 
-    return 16*np.floor(p/16)
+    p_new = 16*np.floor(to_xz(p)/16)
+    return rectpoint(*p_new.T)
 
 def in_ring(p: Coordinates, ring_num: int) -> bool:
     """Checks whether coordinates are in the n-th stronghold ring."""
