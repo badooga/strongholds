@@ -1,18 +1,18 @@
-from . import geometry as gm
+from . import math as gm
 
-from .types import RectPoint, RectCoordinates, ScalarLike
+from .types import Point, Coordinates, ScalarLike
 
 __all__ = ["closest_stronghold", "points_in_cone"]
 
-def closest_stronghold(p: RectPoint, strongholds: RectCoordinates) -> RectPoint:
+def closest_stronghold(p: Point, strongholds: Coordinates) -> Point:
     """Finds the closest stronghold to a point."""
 
     distances = gm.distance(p, strongholds)
     return strongholds[distances.argmin(axis=-1, keepdims=True)].squeeze()
 
-def points_in_cone(p: RectPoint, grid: RectCoordinates,
+def points_in_cone(p: Point, grid: Coordinates,
                    theta: ScalarLike, theta_err: ScalarLike = 0.05,
-                   error_is_relative: bool = True) -> RectCoordinates:
+                   error_is_relative: bool = True) -> Coordinates:
     """
     Finds the possible stronghold locations from an Eye of Ender throw.
     
@@ -24,7 +24,8 @@ def points_in_cone(p: RectPoint, grid: RectCoordinates,
         `error_is_relative`: whether `theta_err` is absolute or relative
     """
 
-    r, phi = gm.to_polar(grid - p).T
+    grid_rel = grid - p
+    r, phi = gm.radius(grid_rel), gm.angle(grid_rel)
     if error_is_relative:
         theta_b, theta_a = theta * (1 + gm.pm * theta_err)
     else:
