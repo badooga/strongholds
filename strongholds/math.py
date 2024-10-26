@@ -15,7 +15,9 @@ def rectpoint(x: ScalarLike, z: ScalarLike) -> Coordinates:
     return x + z*1j
 
 def polarpoint(r: ScalarLike, phi: ScalarLike) -> Coordinates:
-    """Creates Coordinates from r and phi values."""
+    """
+    Creates Coordinates from r and phi values.
+    """
 
     return r * cis(phi)
 
@@ -27,17 +29,17 @@ def to_xz(p: Coordinates) -> CoordinateTuples:
 # Eucldiean properties
 
 def radius(p: Coordinates) -> ScalarLike:
-    """Finds the radius of given coordinates."""
+    """Finds the radius of the given coordinates."""
 
     return np.abs(p)
 
 def angle(p: Coordinates) -> ScalarLike:
-    """Finds the polar angle of given coordinates."""
+    """Finds the polar angle of the given coordinates."""
 
     return np.angle(p)
 
 def distance(p1: Coordinates, p2: Coordinates) -> ScalarLike:
-    """Euclidean distance metric between two coordinates."""
+    """Finds the distance between two coordinates."""
 
     return radius(p2 - p1)
 
@@ -46,19 +48,29 @@ def distance(p1: Coordinates, p2: Coordinates) -> ScalarLike:
 pm = np.array([1, -1])
 
 def in_interval(x: ScalarLike, a: ScalarLike, b: ScalarLike) -> bool:
-    """Returns whether x is in the closed interval [a, b]."""
+    """
+    Returns whether x is in the closed interval [m, M], where
+    m = min(a, b) and M = max(a, b). If any of these values
+    are arrays, the operation is performed element-wise.
+    """
 
     a, b = np.min((a, b)), np.max((a, b))
     return (a <= x) & (x <= b)
 
 def rotate(p: Coordinates, delta: ScalarLike,
            origin: Coordinates | None = 0) -> Coordinates:
-    """Rotates a point by delta radians about some origin point."""
+    """
+    Rotates a point by delta radians counterclockwise
+    about some origin point (or (0, 0), if not specified).
+    """
 
     return origin + cis(delta) * (p - origin)
 
 def unity_angles(n: int) -> NSequence:
-    """Returns the arguments of the roots of the n-th roots of unity."""    
+    """
+    Returns the arguments of the roots of the n-th roots of unity,
+    i.e. the angles 2*pi/n, 4*pi/n, ..., 2*pi.
+    """
 
     i = np.arange(n)
     return 2*np.pi*i/n
