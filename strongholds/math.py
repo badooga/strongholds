@@ -33,10 +33,10 @@ def radius(p: Coordinates) -> ScalarLike:
 
     return np.abs(p)
 
-def angle(p: Coordinates) -> ScalarLike:
+def angle(p: Coordinates, deg: bool = False) -> ScalarLike:
     """Finds the polar angle of the given coordinates."""
 
-    return np.angle(p)
+    return np.angle(p, deg)
 
 def distance(p1: Coordinates, p2: Coordinates) -> ScalarLike:
     """Finds the distance between two coordinates."""
