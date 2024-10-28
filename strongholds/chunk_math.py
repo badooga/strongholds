@@ -1,6 +1,6 @@
 import numpy as np
 
-from .math import in_interval, radius, rectpoint, to_xz
+from .math import angle, in_interval, radius, rectpoint, to_xz
 from .types import Coordinates, ScalarLike
 
 stronghold_count = (3, 6, 10, 15, 21, 28, 36, 9)
@@ -21,15 +21,36 @@ def to_radians(y_rot: ScalarLike) -> ScalarLike:
     use `Ax.invert_yaxis()` to create an accurate image when plotting.
     """
 
+    ## we could just do phi = (-90 - y_rot) * pi/180, but
+    ## we want to make sure that our result is in [-pi, pi).
+    ## we do this by using np.angle, which automatically does that
+
     # express y_rot as a unit phasor
     z = np.exp(1j*y_rot * np.pi/180)
     # rotate by a quarter turn to get to 0 rad in the +x direction,
     # and then flip vertically to get everything in terms of the xz plane.
     w = np.conj(1j*z)
-    return np.angle(w)
+    return angle(w)
+
+def to_yrot(phi: ScalarLike) -> ScalarLike:
+    """
+    Converts a polar angle in the xz plane to a
+    Minecraft y-rotation value (see `to_radians`).
+    """
+
+    # express phi as a unit phasor
+    w = np.exp(1j*phi)
+    # since w = conj(j*z) = -j * conj(z),
+    # we get conj(z) = j*w, so z = conj(j*w)
+    z = np.conj(1j*w)
+    return angle(z, deg=True)
 
 def snap_chunk(p: Coordinates) -> Coordinates:
-    """Snaps coordinates to the northwest corner of the nearest chunk."""
+    """
+    Snaps coordinates to the northwest corner of the nearest chunk.
+    Note that the northwest corner of the *same* chunk can be
+    found by using np.floor (rounding down) instead.
+    """
 
     return 16*np.round(p/16)
 
