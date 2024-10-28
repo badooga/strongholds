@@ -4,6 +4,8 @@ from matplotlib.figure import Figure
 
 import numpy as np
 
+__all__ = ["setup_xz_plot", "xz_subplots", "flip_zaxis"]
+
 @np.vectorize
 def setup_xz_plot(ax: Axes) -> Axes:
     """Labels axes."""
