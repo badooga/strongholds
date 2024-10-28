@@ -31,10 +31,7 @@ def to_radians(y_rot: ScalarLike) -> ScalarLike:
 def snap_chunk(p: Coordinates) -> Coordinates:
     """Snaps coordinates to the northwest corner of the nearest chunk."""
 
-    # np.floor doesn't work on complex numbers, so
-    # it's necessary to convert to [x, z] form first
-    p_new = 16*np.floor(to_xz(p)/16)
-    return rectpoint(*p_new.T)
+    return 16*np.round(p/16)
 
 def in_ring(p: Coordinates, ring_num: int) -> bool:
     """Checks whether coordinates are in the n-th stronghold ring."""

@@ -33,7 +33,7 @@ def generate_ring(ring_num: int, snap: bool = True,
     P = gm.polarpoint(r, phi)
 
     if snap:
-        # first, snaps biome to (0, 0) of chunk
+        # first, snaps biome to the nearest chunk origin
         P = cm.snap_chunk(P)
         # next, snaps to uniformly chosen biome center up to 7 chunks away
         biome_snap = 16 * rng.integers(-7, 8, (2, n)) + 8
