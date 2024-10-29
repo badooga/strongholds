@@ -1,7 +1,7 @@
 import numpy as np
 
 from .chunk_math import inner_radii, outer_radii, stronghold_count
-from .generate import default_rng, generate_rings
+from .generate import default_rng, generate_ring
 from .locate import closest_stronghold
 from .types import Coordinates, Generator, Iterable, NSequence, Point, ScalarLike
 
@@ -22,7 +22,8 @@ def generation_heatmap(num_samples: int = 10**6,
         ring_nums = range(8)
 
     stronghold_samples = np.array([
-        generate_rings(ring_nums, snap, rng) for _ in range(num_samples)
+        [generate_ring(ring_num, snap, rng) for _ in range(num_samples)]
+        for ring_num in ring_nums
     ])
 
     if concatenate:
