@@ -1,7 +1,7 @@
 import numpy as np
 
 from .math import angle, in_interval, radius, rectpoint, to_xz
-from .types import Coordinates, ScalarLike
+from .types import Coordinates, Iterable, ScalarLike
 
 stronghold_count = (3, 6, 10, 15, 21, 28, 36, 9)
 inner_radii = (1280, 4352, 7424, 10496, 13568, 16640, 19712, 22784)
@@ -60,7 +60,7 @@ def in_ring(p: Coordinates, ring_num: int) -> bool:
     a, b = inner_radii[ring_num], outer_radii[ring_num]
     return in_interval(radius(p), a, b)
 
-def closest_ring(p: Coordinates) -> int | list[int]:
+def closest_ring(p: Coordinates) -> int | Iterable[int]:
     """Finds the stronghold ring that is closest to the given coordinates."""
 
     in_rings = [n for n in range(8) if in_ring(p, n)]
@@ -68,4 +68,4 @@ def closest_ring(p: Coordinates) -> int | list[int]:
         return in_rings[0]
 
     radii = radius(p)
-    return np.floor(np.array([np.abs(radii - r) for r in ring_radii]).argmin()/2)
+    return np.floor(np.array([np.abs(radii - r) for r in ring_radii]).argmin()/2).astype(int)
