@@ -1,12 +1,12 @@
 import numpy as np
 
-from .math import angle, in_interval, radius, rectpoint, to_xz
+from .math import angle, in_interval, radius
 from .types import Coordinates, Iterable, ScalarLike
 
-stronghold_count = (3, 6, 10, 15, 21, 28, 36, 9)
-inner_radii = (1280, 4352, 7424, 10496, 13568, 16640, 19712, 22784)
-outer_radii = (2816, 5888, 8960, 12032, 15104, 18176, 21248, 24320)
-ring_radii = sum(zip(inner_radii, outer_radii), ())
+stronghold_count = np.array([3, 6, 10, 15, 21, 28, 36, 9])
+inner_radii = np.array([1280, 4352, 7424, 10496, 13568, 16640, 19712, 22784])
+outer_radii = np.array([2816, 5888, 8960, 12032, 15104, 18176, 21248, 24320])
+ring_radii = np.dstack((inner_radii, outer_radii)).flatten()
 
 def to_radians(y_rot: ScalarLike) -> ScalarLike:
     """
