@@ -74,3 +74,8 @@ def unity_angles(n: int) -> NSequence:
 
     i = np.arange(n)
     return 2*np.pi*i/n
+
+def bin_centers(bin_edges: NSequence) -> NSequence:
+    """Converts histogram bin edges to bin centers."""
+
+    return (bin_edges[1:] + bin_edges[:1])/2
