@@ -24,7 +24,7 @@ def polarpoint(r: ScalarLike, phi: ScalarLike) -> Coordinates:
 def to_xz(p: Coordinates) -> CoordinateTuples:
     """Converts complex Coordinates x + iz to array form [x, z]."""
 
-    return p.view("(2,)float")
+    return np.array([[p.real], [p.imag]]).T.squeeze()
 
 # Eucldiean properties
 
