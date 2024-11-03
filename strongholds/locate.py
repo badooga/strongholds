@@ -8,7 +8,12 @@ def closest_stronghold(p: Point, strongholds: Coordinates) -> Point:
     """Finds the closest stronghold to a point."""
 
     distances = gm.distance(p, strongholds)
-    return strongholds[distances.argmin(axis=-1, keepdims=True)].squeeze()
+    args = distances.argmin(axis=-1, keepdims=True)
+    closest = gm.np.take_along_axis(strongholds, args, axis=-1).squeeze()
+
+    if strongholds.ndim == 1:
+        return closest.item()
+    return closest
 
 def points_in_cone(p: Point, grid: Coordinates,
                    theta: ScalarLike, theta_err: ScalarLike = 0.05,

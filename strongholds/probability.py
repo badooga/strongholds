@@ -30,14 +30,6 @@ def generation_heatmap(num_samples: int = 10**6,
 
     return stronghold_samples
 
-def closest_stronghold_heatmap(p: Point, stronghold_sets: Iterable[Coordinates]) -> Coordinates:
-    """
-    Given an array from `generation_heatmap()` with `concatenate=False`,
-    returns the stronghold in each set that is the closest to the given point.
-    """
-
-    return np.array([closest_stronghold(p, strongholds) for strongholds in stronghold_sets])
-
 def radial_pdf(r: ScalarLike, ring_num: int) -> ScalarLike:
     """Computes the appproximate radial pdf for a given stronghold ring."""
 
