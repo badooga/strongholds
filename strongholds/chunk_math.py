@@ -54,7 +54,7 @@ def snap_chunk(p: Coordinates) -> Coordinates:
 
     return 16*np.round(p/16)
 
-def in_ring(p: Coordinates, ring_num: int) -> bool:
+def in_ring(p: Coordinates, ring_num: int | Iterable[int]) -> bool:
     """Checks whether coordinates are in the n-th stronghold ring."""
 
     a, b = inner_radii[ring_num], outer_radii[ring_num]
@@ -63,9 +63,6 @@ def in_ring(p: Coordinates, ring_num: int) -> bool:
 def closest_ring(p: Coordinates) -> int | Iterable[int]:
     """Finds the stronghold ring that is closest to the given coordinates."""
 
-    in_rings = [n for n in range(8) if in_ring(p, n)]
-    if in_rings:
-        return in_rings[0]
-
-    radii = radius(p)
-    return np.floor(np.array([np.abs(radii - r) for r in ring_radii]).argmin()/2).astype(int)
+    radii = np.array(radius(p))
+    distances = np.abs(radii[..., None] - ring_radii)
+    return distances.argmin(axis=-1) // 2
