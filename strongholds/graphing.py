@@ -14,8 +14,13 @@ def setup_xz_plot(ax: Axes) -> Axes:
     ax.set_ylabel("z")
     return ax
 
-def xz_subplots(*args, **kwargs) -> tuple[Figure, Axes]:
-    fig, ax = plt.subplots(*args, **kwargs, constrained_layout=True)
+def xz_subplots(*args, **fkwargs) -> tuple[Figure, Axes]:
+    """Sets up an x-z plot."""
+
+    kwargs = {"constrained_layout": True}
+    kwargs.update(fkwargs)
+
+    fig, ax = plt.subplots(*args, **kwargs)
     ax = setup_xz_plot(ax)
     if not ax.shape:
         ax = ax.item()
