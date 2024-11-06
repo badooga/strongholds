@@ -1,44 +1,44 @@
 import numpy as np
 
-from .types import Coordinates, CoordinateTuples, NSequence, ScalarLike
+from . import types
 
 # Create and manage points
 
-def cis(phi: ScalarLike) -> ScalarLike:
+def cis(phi: types.ScalarLike) -> types.ScalarLike:
     """Computes the complex exponential of phi."""
 
     return np.exp(1j * phi)
 
-def rectpoint(x: ScalarLike, z: ScalarLike) -> Coordinates:
+def rectpoint(x: types.ScalarLike, z: types.ScalarLike) -> types.Coordinates:
     """Creates Coordinates from x and z values."""
 
     return x + z*1j
 
-def polarpoint(r: ScalarLike, phi: ScalarLike) -> Coordinates:
+def polarpoint(r: types.ScalarLike, phi: types.ScalarLike) -> types.Coordinates:
     """
     Creates Coordinates from r and phi values.
     """
 
     return r * cis(phi)
 
-def to_xz(p: Coordinates) -> CoordinateTuples:
-    """Converts complex Coordinates x + iz to array form [x, z]."""
+def to_xz(p: types.Coordinates) -> types.CoordinateTuples:
+    """Converts complex types.Coordinates x + iz to array form [x, z]."""
 
     return np.array([[p.real], [p.imag]]).T.squeeze()
 
 # Eucldiean properties
 
-def radius(p: Coordinates) -> ScalarLike:
+def radius(p: types.Coordinates) -> types.ScalarLike:
     """Finds the radius of the given coordinates."""
 
     return np.abs(p)
 
-def angle(p: Coordinates, deg: bool = False) -> ScalarLike:
+def angle(p: types.Coordinates, deg: bool = False) -> types.ScalarLike:
     """Finds the polar angle of the given coordinates."""
 
     return np.angle(p, deg)
 
-def distance(p1: Coordinates, p2: Coordinates) -> ScalarLike:
+def distance(p1: types.Coordinates, p2: types.Coordinates) -> types.ScalarLike:
     """Finds the distance between two coordinates."""
 
     return radius(p2 - p1)
@@ -47,7 +47,7 @@ def distance(p1: Coordinates, p2: Coordinates) -> ScalarLike:
 
 pm = np.array([1, -1])
 
-def in_interval(x: ScalarLike, a: ScalarLike, b: ScalarLike) -> bool:
+def in_interval(x: types.ScalarLike, a: types.ScalarLike, b: types.ScalarLike) -> bool:
     """
     Returns whether x is in the closed interval [m, M], where
     m = min(a, b) and M = max(a, b). If any of these values
@@ -57,8 +57,8 @@ def in_interval(x: ScalarLike, a: ScalarLike, b: ScalarLike) -> bool:
     a, b = np.min((a, b)), np.max((a, b))
     return (a <= x) & (x <= b)
 
-def rotate(p: Coordinates, delta: ScalarLike,
-           origin: Coordinates | None = 0) -> Coordinates:
+def rotate(p: types.Coordinates, delta: types.ScalarLike,
+           origin: types.Coordinates | None = 0) -> types.Coordinates:
     """
     Rotates a point by delta radians counterclockwise
     about some origin point (or (0, 0), if not specified).
@@ -66,7 +66,7 @@ def rotate(p: Coordinates, delta: ScalarLike,
 
     return origin + cis(delta) * (p - origin)
 
-def unity_angles(n: int) -> NSequence:
+def unity_angles(n: int) -> types.NSequence:
     """
     Returns the arguments of the roots of the n-th roots of unity,
     i.e. the angles 2*pi/n, 4*pi/n, ..., 2*pi.
@@ -75,7 +75,7 @@ def unity_angles(n: int) -> NSequence:
     i = np.arange(n)
     return 2*np.pi*i/n
 
-def bin_centers(bin_edges: NSequence) -> NSequence:
+def bin_centers(bin_edges: types.NSequence) -> types.NSequence:
     """Converts histogram bin edges to bin centers."""
 
     return (bin_edges[1:] + bin_edges[:1])/2

@@ -1,17 +1,20 @@
 import numpy as np
 
-from .chunk_math import inner_radii, outer_radii, stronghold_count
+from . import chunk_math as cm, generate as gen, locate as loc, types
+
 from .generate import default_rng, generate_rings
 from .locate import closest_stronghold
-from .types import Coordinates, Generator, Iterable, NSequence, Point, ScalarLike
+from .types import Coordinates, Generator, Iterable, CoordinateSets
 
-__all__ = ["generation_heatmap", "radial_pdf"]
+from . import types
+
+__all__ = ["generation_heatmap", "Predict"]
 
 def generation_heatmap(num_samples: int = 10**6,
                         ring_nums: Iterable[int] | None = None,
                         rng: Generator = default_rng,
                         snap: bool = True,
-                        concatenate: bool = True) -> NSequence | Iterable[Coordinates]:
+                        concatenate: bool = True) -> Coordinates | CoordinateSets:
 
     """
     For the supplied ring numbers, generates those rings
@@ -29,10 +32,3 @@ def generation_heatmap(num_samples: int = 10**6,
         stronghold_samples = np.concatenate(stronghold_samples)
 
     return stronghold_samples
-
-def radial_pdf(r: ScalarLike, ring_num: int) -> ScalarLike:
-    """Computes the appproximate radial pdf for a given stronghold ring."""
-
-    a, b = inner_radii[ring_num], outer_radii[ring_num]
-    total = stronghold_count[ring_num]
-    return r * 1/total # TODO

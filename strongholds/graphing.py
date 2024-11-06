@@ -1,7 +1,4 @@
-import matplotlib.pyplot as plt
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
-
+from matplotlib import pyplot as plt, Axes, Figure
 import numpy as np
 
 __all__ = ["setup_xz_plot", "xz_subplots", "flip_zaxis"]

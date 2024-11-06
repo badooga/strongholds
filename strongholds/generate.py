@@ -1,13 +1,10 @@
 import numpy as np
 
-from . import chunk_math as cm
-from . import math as gm
+from . import chunk_math as cm, math as gm, types
 
-from .types import Iterable, Generator, Coordinates
+default_rng = np.random.default_rng()
 
-default_rng = np.random.default_rng(0)
-
-def generation_grid(ring_nums: Iterable | None = None) -> Coordinates:
+def generation_grid(ring_nums: types.Iterable | None = None) -> types.Coordinates:
     """Returns a grid of possible stronghold points in the supplied rings."""
 
     if ring_nums is None:
@@ -22,7 +19,7 @@ def generation_grid(ring_nums: Iterable | None = None) -> Coordinates:
     return grid[rings]
 
 def generate_ring(ring_num: int, snap: bool = True,
-                  rng: Generator = default_rng) -> Coordinates:
+                  rng: types.Generator = default_rng) -> types.Coordinates:
     """Generates stronghold coordinates in a given ring."""
 
     n = cm.stronghold_count[ring_num]
@@ -41,13 +38,13 @@ def generate_ring(ring_num: int, snap: bool = True,
         P.imag += biome_snap[1]
     return P
 
-def generate_rings(ring_nums: Iterable, snap: bool = True,
-                   rng: Generator = default_rng) -> Coordinates:
+def generate_rings(ring_nums: types.Iterable, snap: bool = True,
+                   rng: types.Generator = default_rng) -> types.Coordinates:
     """Generates stronghold coordinates in given rings."""
 
     return np.concatenate([generate_ring(n, snap, rng) for n in ring_nums])
 
-def generate_all(snap: bool = True, rng: Generator = default_rng) -> Coordinates:
+def generate_all(snap: bool = True, rng: types.Generator = default_rng) -> types.Coordinates:
     """Generates all 128 random strongholds a world can have."""
 
     return generate_rings(range(8), snap, rng)

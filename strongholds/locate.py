@@ -1,10 +1,8 @@
-from . import math as gm
-
-from .types import Point, Coordinates, ScalarLike
+from . import math as gm, types
 
 __all__ = ["closest_stronghold", "points_in_cone"]
 
-def closest_stronghold(p: Point, strongholds: Coordinates) -> Point:
+def closest_stronghold(p: types.Point, strongholds: types.Coordinates) -> types.Point:
     """Finds the closest stronghold to a point."""
 
     distances = gm.distance(p, strongholds)
@@ -15,9 +13,9 @@ def closest_stronghold(p: Point, strongholds: Coordinates) -> Point:
         return closest.item()
     return closest
 
-def points_in_cone(p: Point, grid: Coordinates,
-                   theta: ScalarLike, theta_err: ScalarLike = 0.05,
-                   error_is_relative: bool = False) -> Coordinates:
+def points_in_cone(p: types.Point, grid: types.Coordinates,
+                   theta: types.ScalarLike, theta_err: types.ScalarLike = 0.05,
+                   error_is_relative: bool = False) -> types.Coordinates:
     """
     Finds the possible stronghold locations from an Eye of Ender throw.
     
