@@ -9,11 +9,11 @@ def closest_stronghold(p: types.Point, strongholds: types.Coordinates) -> types.
     args = distances.argmin(axis=-1, keepdims=True)
     closest = gm.np.take_along_axis(strongholds, args, axis=-1).squeeze()
 
-    if strongholds.ndim == 1:
+    if strongholds.ndim <= 1:
         return closest.item()
     return closest
 
-def points_in_cone(p: types.Point, grid: types.Coordinates,
+def points_in_cone(player: types.Point, grid: types.Coordinates,
                    theta: types.ScalarLike, theta_err: types.ScalarLike = 0.05,
                    error_is_relative: bool = False) -> types.Coordinates:
     """
@@ -27,13 +27,13 @@ def points_in_cone(p: types.Point, grid: types.Coordinates,
         `error_is_relative`: whether `theta_err` is absolute or relative
     """
 
-    grid_rel = grid - p
+    grid_rel = grid - player
     r, phi = gm.radius(grid_rel), gm.angle(grid_rel)
     if error_is_relative:
         theta_b, theta_a = theta * (1 + gm.pm * theta_err)
     else:
         theta_b, theta_a = theta + gm.pm * theta_err
 
-    targets = (r > 0) & gm.in_interval(phi, theta_a, theta_b)
+    target_mask = (r > 0) & gm.in_interval(phi, theta_a, theta_b)
 
-    return grid[targets]
+    return grid[target_mask]
