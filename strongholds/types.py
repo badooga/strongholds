@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Callable, Iterable
 
 import numpy as np
@@ -14,6 +12,8 @@ NSequence = npt.NDArray[npt.Shape["* n"], npt.Float]
 ScalarLike = Scalar | NSequence
 
 Point = npt.Complex
+PointProbs = dict[Point, Scalar]
+
 Coordinates = Point | npt.NDArray[npt.Shape["*"], npt.Complex]
 CoordinateSets = npt.NDArray[npt.Shape["*, *"], npt.Complex]
 
