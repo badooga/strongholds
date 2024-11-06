@@ -4,7 +4,7 @@ from . import chunk_math as cm, math as gm, types
 
 default_rng = np.random.default_rng()
 
-__all__ = ["generation_grid", "generate_ring", "generate_rings", "generate_all", "generate_heatmap"]
+__all__ = ["generation_grid", "generate_ring", "generate_rings", "generate_all", "generation_heatmap"]
 
 def generation_grid(ring_nums: types.Iterable | None = None) -> types.Coordinates:
     """Returns a grid of possible stronghold points in the supplied rings."""
