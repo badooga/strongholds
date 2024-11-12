@@ -36,8 +36,7 @@ def generate_ring(ring_num: int, snap: bool = True,
         P = cm.snap_chunk(P)
         # next, snaps to uniformly chosen biome center up to 7 chunks away
         biome_snap = 16 * rng.integers(-7, 8, (2, n)) + 8
-        P.real += biome_snap[0]
-        P.imag += biome_snap[1]
+        P += biome_snap[0] + 1j * biome_snap[1]
     return P
 
 def generate_rings(ring_nums: types.Iterable, snap: bool = True,
