@@ -1,10 +1,24 @@
-import numpy as np
 from math import fsum
-from scipy.interpolate import LinearNDInterpolator
+
+import numpy as np
+from scipy.interpolate import NearestNDInterpolator
 
 from . import chunk_math as cm, generate as gen, locate as loc, math as gm, types
 
 __all__ = ["Predict"]
+
+@np.vectorize(excluded=[2], signature="(),(n,m)->(62,60)")
+def stronghold_histograms(p: types.Point, strongholds: types.Coordinates, bins: int = 60):
+    """Creates a 2D histogram of the closest strongholds to p."""
+
+    closest_strongholds = loc.closest_stronghold(p, strongholds)
+    H, x_edges, z_edges = np.histogram2d(closest_strongholds.real,
+                                         closest_strongholds.imag,
+                                         bins=bins, density=False)
+
+    x_centers, z_centers = gm.bin_centers(x_edges), gm.bin_centers(z_edges)
+
+    return np.vstack((H.T, x_centers - p.real, z_centers - p.imag))
 
 class Predict:
 
@@ -34,36 +48,26 @@ class Predict:
 
         self.interpolator = self._create_interpolator(max_distance)
 
-    def _create_interpolator(self, r0_max: types.Scalar):
+    def _create_interpolator(self, r_max: types.Scalar, bins: int = 60) -> NearestNDInterpolator:
         """docstring"""
 
         #r0_max = gm.radius(self.grid).max()
 
-        x, z = [], []
-        r0 = np.linspace(0, r0_max, int(r0_max/2))
+        r = np.linspace(0, r_max, int(r_max/2))
 
-        counts = []
+        out = stronghold_histograms(r, self.heatmap, bins)
 
-        for r0_ in r0:
-            closest_strongholds = loc.closest_stronghold(r0_, self.heatmap)
+        counts, x, z = out[:, :bins, :], out[:, bins, :], out[:, bins+1, :]
 
-            H, x_edges, z_edges = np.histogram2d(closest_strongholds.real,
-                                                    closest_strongholds.imag,
-                                                    bins=60, density=True)
-            x_centers, z_centers = gm.bin_centers(x_edges), gm.bin_centers(z_edges)
+        coords = np.zeros(shape=(*counts.shape, 3))
+        i, j, k = np.indices(counts.shape)
+        o = np.zeros_like(counts)
 
-            x.append(x_centers - r0_) # relative distance
-            z.append(z_centers)
-            counts.append(H.T)
+        coords[i, j, k, 0] = (r[:, None, None] + o)[i, j, k]
+        coords[i, j, k, 1] = (x[:, :, None] + o)[i, j, k]
+        coords[i, j, k, 2] = (z[:, None, :] + o)[i, j, k]
 
-        x, z, r0 = np.array(x), np.array(z), np.array(r0)
-        X, Z, R0 = np.meshgrid(x, z, r0)
-        points = np.dstack((X.ravel(), Z.ravel(), R0.ravel()))
-
-        counts = np.array(counts)
-        values = counts.ravel()
-
-        return LinearNDInterpolator(points, values, fill_value=0, rescale=True)
+        return NearestNDInterpolator(coords.reshape(-1, 3), counts.ravel())
 
     @staticmethod
     def normalize_probabilities(probabilities: types.PointProbs) -> types.PointProbs:
