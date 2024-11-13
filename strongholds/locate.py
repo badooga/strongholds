@@ -16,19 +16,19 @@ def closest_stronghold(p: types.Coordinates,
     """
 
     # adds empty axes to so that we can do broadcasting for |s - p|
+    p = gm.np.array(p)
     N = (None for _ in range(s.ndim))
     P = p[..., *N]
 
-    # finds the mins along the last axis:
-    # if p is an array, then it 
-    # i.e. for each `Coordinates` in a `CoordinateSets`,
-    # and for 
-    mins = gm.distance(s, P).min(axis=-1, keepdims=True)
+    # finds the mins along the last axis
+    m = gm.distance(s, P).amin(axis=-1, keepdims=True)
 
+    # tiles s to have the same shape as m
     S = gm.np.tile(s, (*p.shape, *gm.np.ones_like(s.shape)))
 
-    D = gm.np.where(gm.distance(S, P) == mins, S, 0)
-    return D.sum(axis=-1)
+    # identifies the strongholds in s that minimize |s - p|
+    M = gm.np.where(gm.distance(S, P) == m, S, 0)
+    return M.sum(axis=-1)
 
 def points_in_cone(player: types.Point, grid: types.Coordinates,
                    theta: types.ScalarLike, theta_err: types.ScalarLike = 0.05,
