@@ -40,8 +40,9 @@ class Predict:
         self.throw_angles: list[types.Scalar] = []
         self.throw_errors: list[types.Scalar] = []
 
-        self.throw_probabilities: types.PointProbs = {}
-        self.stronghold_probabilities: list[types.PointProbs] = []
+        self.individual_throws: list[types.PointProbs] = []
+        self.cumulative_throw: types.PointProbs = {}
+
 
         if max_distance is None:
             max_distance = gm.radius(self.grid).max()
@@ -50,8 +51,6 @@ class Predict:
 
     def _create_interpolator(self, r_max: types.Scalar, bins: int = 60) -> NearestNDInterpolator:
         """docstring"""
-
-        #r0_max = gm.radius(self.grid).max()
 
         r = np.linspace(0, r_max, int(r_max/2))
 
@@ -70,11 +69,27 @@ class Predict:
         return NearestNDInterpolator(coords.reshape(-1, 3), counts.ravel())
 
     @staticmethod
-    def normalize_probabilities(probabilities: types.PointProbs) -> types.PointProbs:
+    def normalize_probabilities(probpoints: types.PointProbs) -> types.PointProbs:
         """Normalizes the probabilities in a dictionary of point probabilities."""
 
-        total = fsum(P := probabilities.values())
-        return dict(zip(probabilities, map(lambda x: x/total, P)))
+        total = fsum(probpoints.values())
+        return {point: p/total for point, p in probpoints.items()}
+
+    def probability(self, player: types.Point, strongholds: types.Coordinates) -> types.PointProbs:
+        """
+        Finds the probability that the given strongholds will be the nearest one to the player.
+        """
+
+        r0, phi = gm.radius(player), gm.angle(player)
+
+        # relative coordinates
+        rel_coords = strongholds/gm.cis(phi) - r0
+
+        # compute and normalize probabilities
+        P = self.interpolator(r0, rel_coords.real, rel_coords.imag)
+        P /= fsum(P)
+
+        return dict(zip(strongholds, P))
 
     def points_in_cone(self, player: types.Point,
                        angle: types.Scalar,
@@ -86,23 +101,36 @@ class Predict:
 
         return loc.points_in_cone(player, self.grid, angle, angle_error)
 
-    def interpolate(self, strongholds: types.Iterable[types.Point]):
-        """interpolate"""
-
-        # interpolate
-        P = 1
-
-        probabilities = dict(zip())
-        return self.normalize_probabilities(probabilities)
-
     def add_throw(self, player: types.Point,
                   angle: types.Scalar,
                   angle_error: types.Scalar = 0.1) -> None:
-        """docstring"""
+        """
+        Adds an Eye of Ender throw to the list of throws and computes the resulting probabilities.
+        """
 
-        possible_grid_points = self.points_in_cone(player, angle, angle_error)
-        old_targets = self.stronghold_probabilities.keys()
+        # find the possible grid points from this throw
+        new_targets = self.points_in_cone(player, angle, angle_error)
 
-        new_targets = old_targets & possible_grid_points
+        # find their intersection with previous throw grid points, if any
+        old_targets = self.cumulative_throw.keys()
+        if old_targets:
+            new_targets = np.fromiter(old_targets & new_targets, complex)
 
-        new_probabilities = dict(zip(new_targets, self.interpolate(new_targets)))
+        # compute the probabilities for each grid point from just this throw
+        P = self.probability(player, new_targets)
+        new_throw = dict(zip(new_targets, P))
+        self.individual_throws.append(new_throw)
+
+        # if there are no other throws, we're done
+        if not old_targets:
+            self.cumulative_throw = new_throw
+            return
+
+        # if there are other throws, multiply those probabilities and normalize
+        intersection = [self.normalize_probabilities({k: v for k, v in throw.items()
+                                                       if k in new_throw})
+                         for throw in self.individual_throws]
+
+        self.cumulative_throw = self.normalize_probabilities({
+            k: np.prod([throw[k] for throw in intersection])
+            for k in new_throw})
