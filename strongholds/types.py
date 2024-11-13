@@ -1,4 +1,4 @@
-from typing import Callable, Iterable, SupportsFloat as Scalar
+from typing import Callable, Iterable
 
 import numpy as np
 import nptyping as npt
@@ -7,6 +7,7 @@ __all__ = ["Generator", "Scalar", "NSequence", "ScalarLike", "Point", "Coordinat
 
 Generator = np.random.Generator
 
+Scalar = int | float | npt.Int | npt.Float
 NSequence = npt.NDArray[npt.Shape["* n"], npt.Float]
 ScalarLike = Scalar | NSequence
 
