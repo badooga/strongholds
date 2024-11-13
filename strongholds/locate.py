@@ -2,16 +2,33 @@ from . import math as gm, types
 
 __all__ = ["closest_stronghold", "points_in_cone"]
 
-def closest_stronghold(p: types.Point, strongholds: types.Coordinates) -> types.Point:
-    """Finds the closest stronghold to a point."""
+def closest_stronghold(p: types.Coordinates,
+                       s: types.Coordinates | types.CoordinateSets) -> types.Coordinates:
+    """
+    Finds the closest stronghold from coordinates `s` to the player `p`.
 
-    distances = gm.distance(p, strongholds)
-    args = distances.argmin(axis=-1, keepdims=True)
-    closest = gm.np.take_along_axis(strongholds, args, axis=-1).squeeze()
+    Broadcasting rules:
+    - If `p` is an array of player locations, it will do this for each one
+    - If `s` is of type `CoordinateSets`, i.e. an array of stronghold
+      coordinate arrays each representing a different world, it will
+      do this for each world.
+    - In general, the output shape is `p.shape + s.shape[:-1]`.
+    """
 
-    if strongholds.ndim <= 1:
-        return closest.item()
-    return closest
+    # adds empty axes to so that we can do broadcasting for |s - p|
+    N = (None for _ in range(s.ndim))
+    P = p[..., *N]
+
+    # finds the mins along the last axis:
+    # if p is an array, then it 
+    # i.e. for each `Coordinates` in a `CoordinateSets`,
+    # and for 
+    mins = gm.distance(s, P).min(axis=-1, keepdims=True)
+
+    S = gm.np.tile(s, (*p.shape, *gm.np.ones_like(s.shape)))
+
+    D = gm.np.where(gm.distance(S, P) == mins, S, 0)
+    return D.sum(axis=-1)
 
 def points_in_cone(player: types.Point, grid: types.Coordinates,
                    theta: types.ScalarLike, theta_err: types.ScalarLike = 0.05,
