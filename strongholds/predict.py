@@ -1,11 +1,51 @@
+from collections import UserDict
+
 from math import fsum
 
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 
-from . import chunk_math as cm, generate as gen, locate as loc, math as gm, types
+from . import chunk_math as cm, generate as gen, graphing, locate as loc, math as gm, types
 
 __all__ = ["Predict"]
+
+class Probabilities(UserDict[types.Point, types.Scalar]):
+    """Class for storing stronghold probabilities."""
+
+    @classmethod
+    def from_arrays(cls, points: types.Coordinates, probabilities: types.NSequence) -> types.Self:
+        self = cls(dict(zip(points, probabilities)))
+        self.normalize()
+        return self
+
+    @property
+    def points(self) -> types.Coordinates:
+        return np.array(list(self.keys()))
+
+    @property
+    def probabilities(self) -> types.NSequence:
+        return np.array(list(self.values()))
+
+    def remove_zeros(self) -> None:
+        for k, v in self.items():
+            if not v:
+                del self[k]
+
+    def normalize(self) -> None:
+        self.remove_zeros()
+        total = self.probabilities.sum()
+        if total:
+            for k in self:
+                self[k] /= total
+
+    def __and__(self, other: types.Self) -> None:
+        self.data = {k: self[k] * other[k] for k in self.keys() & other.keys()}
+
+    def intersection(self, *args: types.Self) -> None:
+        for other in args:
+            self & other
+            self.remove_zeros()
+        self.normalize()
 
 class Predict:
 
@@ -23,18 +63,15 @@ class Predict:
             heatmap = gen.generation_heatmap(10**6, rng=rng, concatenate=False)
         self.heatmap = heatmap
 
-        self.throw_locations: list[types.Point] = []
-        self.throw_angles: list[types.Scalar] = []
-        self.throw_errors: list[types.Scalar] = []
-
-        self.individual_throws: list[types.PointProbs] = []
-        self.cumulative_throw: types.PointProbs = {}
+        self.throws: list[loc.EyeThrow] = []
+        self.individual_probs: list[Probabilities] = []
+        self.cumulative_probs: Probabilities = []
 
         if max_distance is None:
             max_distance = gm.radius(self.heatmap).max()
 
     def create_interpolator(self, player: types.Point, bins: int = 60) -> RegularGridInterpolator:
-        """docstring"""
+        """Creates an interpolator for the nearest strongholds to a point."""
 
         # bin the coordinates
         closest_strongholds = loc.closest_stronghold(player, self.heatmap)
@@ -47,17 +84,7 @@ class Predict:
         return RegularGridInterpolator((x_centers, z_centers), H.T,
                                        bounds_error=False, fill_value=0)
 
-    @staticmethod
-    def normalize_probabilities(probpoints: types.PointProbs) -> types.PointProbs:
-        """Normalizes the probabilities in a dictionary of point probabilities."""
-
-        filtered = {point: p for point, p in probpoints.items() if p}
-        total = fsum(filtered.values())
-        if not total:
-            return filtered
-        return {point: p/total for point, p in filtered.items()}
-
-    def find_probabilities(self, player: types.Point, strongholds: types.Coordinates) -> types.PointProbs:
+    def find_probabilities(self, player: types.Point, strongholds: types.Coordinates) -> Probabilities:
         """
         Finds the probabilities that the given strongholds will be the nearest one to the player.
         """
@@ -65,17 +92,7 @@ class Predict:
         interpolator = self.create_interpolator(player)
         P = interpolator(gm.to_xz(strongholds))
 
-        return self.normalize_probabilities(dict(zip(strongholds, P)))
-
-    def points_in_cone(self, player: types.Point,
-                       angle: types.Scalar,
-                       angle_error: types.Scalar) -> types.Coordinates:
-        """Finds the possible stronghold locations from an Eye of Ender throw."""
-
-        angle = cm.to_radians(angle)
-        angle_error *= np.pi/180
-
-        return loc.points_in_cone(player, self.grid, angle, angle_error)
+        return Probabilities.from_arrays(strongholds, P)
 
     def add_throw(self, player: types.Point,
                   angle: types.Scalar,
@@ -84,28 +101,24 @@ class Predict:
         Adds an Eye of Ender throw to the list of throws and computes the resulting probabilities.
         """
 
-        # find the possible grid points from this throw
-        new_targets = self.points_in_cone(player, angle, angle_error)
+        # saves the throw data
+        throw = loc.EyeThrow(player, angle, angle_error)
+        self.throws.append(throw)
 
-        # find their intersection with previous throw grid points, if any
-        old_targets = self.cumulative_throw.keys()
-        if old_targets:
-            new_targets = np.fromiter(old_targets & new_targets, complex)
+        # finds the possible grid points for this throw
+        new_targets = throw.points_in_cone(self.grid)
 
         # compute the probabilities for each grid point from just this throw
-        new_throw = self.find_probabilities(player, new_targets)
-        self.individual_throws.append(new_throw)
+        new_probs = self.find_probabilities(player, new_targets)
 
-        # if there are no other throws, we're done
-        if not old_targets:
-            self.cumulative_throw = new_throw
-            return
+        # find their intersection with previous throw grid points, if any
+        # if there are old throws, multiply those probabilities and normalize
+        if self.cumulative_probs:
+            new_probs.intersection(*self.individual_probs)
 
-        # if there are other throws, multiply those probabilities and normalize
-        intersection = [self.normalize_probabilities({k: v for k, v in throw.items()
-                                                       if k in new_throw})
-                         for throw in self.individual_throws]
+        self.cumulative_probs = new_probs
+        self.individual_probs.append(new_probs)
 
-        self.cumulative_throw = self.normalize_probabilities({
-            k: np.prod([throw[k] for throw in intersection])
-            for k in new_throw})
+    def plot_throws(self, fig: graphing.Figure, ax: graphing.Axes):
+        pass
+        # TODO: graphing.flip_zaxis(ax)
