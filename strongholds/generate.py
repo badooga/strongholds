@@ -6,14 +6,14 @@ default_rng = np.random.default_rng()
 
 __all__ = ["generation_grid", "generate_ring", "generate_rings", "generate_all", "generation_heatmap"]
 
-def generation_grid(ring_nums: types.Iterable | None = None) -> types.Coordinates:
+def generation_grid(ring_nums: types.Iterable | None = None, center: bool = False) -> types.Coordinates:
     """Returns a grid of possible stronghold points in the supplied rings."""
 
     if ring_nums is None:
         ring_nums = range(8)
 
     i = np.arange(-24496/16, 24496/16)
-    x = z = 16*i + 8
+    x = z = 16*i + (8 if center else 0)
     X, Z = np.meshgrid(x, z)
     grid = gm.rectpoint(X, Z).flatten()
 
