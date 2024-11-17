@@ -1,5 +1,4 @@
-from .chunk_math import to_radians, to_yrot
+from .chunk_math import to_radians, to_yrot, Coordinates
 from .generate import generation_grid, generate_all, generation_heatmap
-from .math import angle, radius, rectpoint, polarpoint
-from .locate import closest_stronghold
+from .locate import closest_stronghold, EyeThrow
 from .predict import Predict

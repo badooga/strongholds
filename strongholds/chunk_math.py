@@ -29,7 +29,7 @@ def to_radians(y_rot: types.ScalarLike) -> types.ScalarLike:
     # express y_rot as a unit phasor
     z = np.exp(1j*y_rot * np.pi/180)
     # rotate by a quarter turn to get to 0 rad in the +x direction
-    return gm.angle(1j*z)
+    return gm.np.angle(1j*z)
 
 def to_yrot(phi: types.ScalarLike) -> types.ScalarLike:
     """
@@ -40,26 +40,106 @@ def to_yrot(phi: types.ScalarLike) -> types.ScalarLike:
     # express phi as a unit phasor
     w = np.exp(1j*phi)
     # since w = j*z, z = -j*w
-    return gm.angle(1j*w, deg=True)
+    return gm.np.angle(-1j*w, deg=True)
 
-def snap_chunk(p: types.Coordinates) -> types.Coordinates:
-    """
-    Snaps coordinates to the northwest corner of the nearest chunk.
-    Note that the northwest corner of the *same* chunk can be
-    found by using np.floor (rounding down) instead.
-    """
+class Coordinates:
+    """Stores Minecraft coordinates and its relevant properties."""
 
-    return 16*np.round(p/16)
+    def __init__(self, coords: types.Point | types.Points) -> None:
+        self.coords = coords
 
-def in_ring(p: types.Coordinates, ring_num: int | types.Iterable[int]) -> bool:
-    """Checks whether coordinates are in the n-th stronghold ring."""
+    def __repr__(self) -> str:
+        return str(self.coords)
 
-    a, b = inner_radii[ring_num], outer_radii[ring_num]
-    return gm.in_interval(gm.radius(p), a, b)
+    @classmethod
+    def from_rect(cls, x: types.ScalarLike, z: types.ScalarLike) -> types.Self:
+        return cls(x + 1j * z)
 
-def closest_ring(p: types.Coordinates) -> int | types.Iterable[int]:
-    """Finds the stronghold ring that is closest to the given coordinates."""
+    @classmethod
+    def from_polar(cls, r: types.ScalarLike, phi: types.ScalarLike) -> types.Self:
+        return cls(r * np.exp(1j * phi))
 
-    radii = np.array(gm.radius(p))
-    distances = np.abs(radii[..., None] - ring_radii)
-    return distances.argmin(axis=-1) // 2
+    @classmethod
+    def phasor(cls, phi: types.ScalarLike):
+        return cls(np.exp(1j * phi))
+
+    @property
+    def size(self):
+        return self.coords.size
+
+    @property
+    def x(self) -> types.ScalarLike:
+        return self.coords.real
+
+    @property
+    def z(self) -> types.ScalarLike:
+        return self.coords.imag
+
+    @property
+    def r(self) -> types.ScalarLike:
+        return np.abs(self.coords)
+
+    @property
+    def phi(self) -> types.ScalarLike:
+        return np.angle(self.coords)
+
+    @property
+    def yrot(self) -> types.ScalarLike:
+        """
+        Converts a polar angle in the xz plane to a
+        Minecraft y-rotation value (see `to_radians`).
+        """
+
+        # express phi as a unit phasor
+        w = np.exp(1j*self.phi)
+        # since w = j*z, z = -j*w
+        return gm.angle(1j*w, deg=True)
+
+    @property
+    def chunk_corner(self) -> types.Self:
+        new_coords = self.coords / 8
+        return Coordinates.from_rect(8 * np.floor(new_coords.real),
+                                     8 * np.floor(new_coords.imag))
+
+    @property
+    def chunk_center(self) -> types.Self:
+        new_coords = self.chunk_corner + (8. + 8.j)
+        return Coordinates(new_coords)
+
+    @property
+    def chunk_coords(self):
+        return Coordinates.from_rect(self.x % 16, self.z/16)
+
+    def to_xz(self) -> types.CoordinateTuples:
+        return np.array([[self.x], [self.z]]).T.squeeze()
+
+    def rotate(self, delta: types.ScalarLike,
+               origin: types.Self | types.Point | types.Points = 0) -> None:
+        """
+        Rotates a point by delta radians counterclockwise
+        about some origin point (defaulting to the origin).
+        """
+
+        self.coords = origin + np.exp(1j * delta) * (self.coords - origin)
+
+    def distance(self, other) -> types.ScalarLike:
+        try:
+            return np.abs(self.coords - other.coords)
+        except AttributeError:
+            return np.abs(self.coords - other)
+
+    def in_nether(self) -> types.Self:
+        return np.floor(self.coords/8)
+
+    def in_ring(self, ring_num: int | types.Iterable[int]) -> bool:
+        """Checks whether coordinates are in the n-th stronghold ring."""
+
+        a, b = inner_radii[ring_num], outer_radii[ring_num]
+        return gm.in_interval(self.r, a, b)
+
+    def closest_ring(self) -> int | types.Iterable[int]:
+        """Finds the stronghold ring that is closest to the given coordinates."""
+
+        radii = np.array(self.r)
+        distances = np.abs(radii[..., None] - ring_radii)
+        return distances.argmin(axis=-1) // 2

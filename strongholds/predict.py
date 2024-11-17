@@ -13,13 +13,13 @@ class Probabilities(UserDict[types.Point, types.Scalar]):
     """Class for storing stronghold probabilities."""
 
     @classmethod
-    def from_arrays(cls, points: types.Coordinates, probabilities: types.NSequence) -> types.Self:
+    def from_arrays(cls, points: types.Points, probabilities: types.NSequence) -> types.Self:
         self = cls(dict(zip(points, probabilities)))
         self.normalize()
         return self
 
     @property
-    def points(self) -> types.Coordinates:
+    def points(self) -> types.Points:
         return np.array(list(self.keys()))
 
     @property
@@ -54,7 +54,7 @@ class Probabilities(UserDict[types.Point, types.Scalar]):
 class Predict:
     """Class for predicting where the closest stronghold will be."""
 
-    def __init__(self, grid: types.Coordinates | None = None,
+    def __init__(self, grid: cm.Coordinates | None = None,
                  heatmap: types.CoordinateSets | None = None,
                  rng: types.Generator = gen.default_rng) -> None:
 
@@ -72,13 +72,13 @@ class Predict:
 
         self.interpolators: list[RegularGridInterpolator] = []
 
-    def create_interpolator(self, player: types.Point, bins: int = 60) -> RegularGridInterpolator:
+    def create_interpolator(self, player: cm.Coordinates, bins: int = 60) -> RegularGridInterpolator:
         """Creates an interpolator for the nearest strongholds to a point."""
 
         # bin the coordinates
         closest_strongholds = loc.closest_stronghold(player, self.heatmap)
-        H, x_edges, z_edges = np.histogram2d(closest_strongholds.real,
-                                            closest_strongholds.imag,
+        H, x_edges, z_edges = np.histogram2d(closest_strongholds.x,
+                                            closest_strongholds.z,
                                             bins=bins, density=False)
 
         # interpolate the result
@@ -86,16 +86,16 @@ class Predict:
         return RegularGridInterpolator((x_centers, z_centers), H,
                                        bounds_error=False, fill_value=0)
 
-    def find_probabilities(self, player: types.Point, strongholds: types.Coordinates) -> Probabilities:
+    def find_probabilities(self, player: cm.Coordinates, strongholds: cm.Coordinates) -> Probabilities:
         """
         Finds the probabilities that the given strongholds will be the nearest one to the player.
         """
 
         interpolator = self.create_interpolator(player)
         self.interpolators.append(interpolator)
-        P = interpolator(gm.to_xz(strongholds))
+        P = interpolator(strongholds.to_xz())
 
-        return Probabilities.from_arrays(strongholds, P)
+        return Probabilities.from_arrays(strongholds.coords, P)
 
     def add_throw(self, player: types.Point,
                   angle: types.Scalar,
@@ -123,18 +123,18 @@ class Predict:
         self.individual_probs.append(new_probs)
 
     def plot_throws(self, fig: graphing.Figure, ax: graphing.Axes):
-        players: types.Coordinates = np.array([throw.location for throw in self.throws])
+        players = np.array([throw.location.coords for throw in self.throws])
         scatter_players = ax.scatter(players.real, players.imag, marker="x", color="red")
 
-        t = np.linspace(0, gm.radius(self.heatmap).max())
+        t = np.linspace(0, np.abs(self.heatmap).max())
         #rays_0 = np.array([throw.location + gm.cis(throw.theta) * t
         #                   for throw in self.throws]).squeeze()
-        rays_a = np.array([throw.location + gm.cis(throw.theta_a) * t
+        rays_a = np.array([throw.location.coords + np.exp(1j * throw.theta_a) * t
                            for throw in self.throws]).squeeze()
-        rays_b = np.array([throw.location + gm.cis(throw.theta_b) * t
+        rays_b = np.array([throw.location.coords + np.exp(1j * throw.theta_b) * t
                            for throw in self.throws]).squeeze()
 
-        scatter_grid = ax.scatter(self.grid.real, self.grid.imag,
+        scatter_grid = ax.scatter(self.grid.x, self.grid.z,
                                   s=1e-4, color="white")
         scatter_intersection = ax.scatter(self.cumulative_probs.points.real,
                                           self.cumulative_probs.points.imag,

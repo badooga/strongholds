@@ -4,8 +4,8 @@ from . import chunk_math as cm, math as gm, types
 
 __all__ = ["closest_stronghold", "EyeThrow"]
 
-def closest_stronghold(p: types.Coordinates,
-                       s: types.Coordinates | types.CoordinateSets) -> types.Coordinates:
+def closest_stronghold(p: cm.Coordinates,
+                       s: cm.Coordinates | types.CoordinateSets) -> cm.Coordinates:
     """
     Finds the closest stronghold from coordinates `s` to the player `p`.
 
@@ -17,35 +17,36 @@ def closest_stronghold(p: types.Coordinates,
     - In general, the output shape is `p.shape + s.shape[:-1]`.
     """
 
+    try:
+        p = p.coords
+        s = s.coords
+    except AttributeError:
+        pass
+
     # adds empty axes to so that we can do broadcasting for |s - p|
     p = gm.np.array(p)
     N = (None for _ in range(s.ndim))
     P = p[..., *N]
 
     # finds the mins along the last axis
-    m = gm.distance(s, P).min(axis=-1, keepdims=True)
+    m = gm.np.abs(s - P).min(axis=-1, keepdims=True)
 
     # tiles s to have the same shape as m
     S = gm.np.tile(s, (*p.shape, *gm.np.ones_like(s.shape)))
 
     # identifies the strongholds in s that minimize |s - p|
-    M = gm.np.where(gm.distance(S, P) == m, S, 0)
-    return M.sum(axis=-1)
+    M = gm.np.where(gm.np.abs(S - P) == m, S, 0)
+    return cm.Coordinates(M.sum(axis=-1))
+
 @dataclass
 class EyeThrow:
     """Stores the data of an Eye of Ender throw."""
 
-    location: types.Point
+    location: cm.Coordinates
     angle: types.Scalar
     error: types.Scalar
 
     def __post_init__(self) -> None:
-        # store rectangular and polar coordinates
-        self.x: types.Scalar = self.location.real
-        self.z: types.Scalar = self.location.imag
-        self.r: types.Scalar = gm.radius(self.location)
-        self.phi: types.Scalar = gm.angle(self.location)
-
         # convert throw angle to radians
         self.theta: types.Scalar = cm.to_radians(self.angle)
         self.dtheta: types.Scalar = self.error * gm.np.pi/180
@@ -54,9 +55,10 @@ class EyeThrow:
         self.theta_a: types.Scalar = self.theta - self.dtheta
         self.theta_b: types.Scalar = self.theta + self.dtheta
 
-    def points_in_cone(self, grid: types.Coordinates) -> types.Coordinates:
+    def points_in_cone(self, grid: cm.Coordinates) -> cm.Coordinates:
         """Finds the possible grid locations the throw could be pointing towards."""
 
-        grid_phi = gm.angle(grid - self.location)
-        return grid[gm.np.isclose(grid_phi, self.theta)
-                    | gm.in_interval(grid_phi, self.theta_a, self.theta_b)]
+        grid_phi = gm.np.angle(grid.coords - self.location.coords)
+        mask = gm.np.isclose(grid_phi, self.theta) | gm.in_interval(grid_phi, self.theta_a, self.theta_b)
+
+        return cm.Coordinates(grid.coords[mask])
