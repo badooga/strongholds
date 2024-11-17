@@ -58,4 +58,5 @@ class EyeThrow:
         """Finds the possible grid locations the throw could be pointing towards."""
 
         grid_phi = gm.angle(grid - self.location)
-        return grid[gm.in_interval(grid_phi, self.theta_a, self.theta_b)]
+        return grid[gm.np.isclose(grid_phi, self.theta)
+                    | gm.in_interval(grid_phi, self.theta_a, self.theta_b)]
