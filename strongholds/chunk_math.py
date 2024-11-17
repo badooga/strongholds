@@ -28,10 +28,8 @@ def to_radians(y_rot: types.ScalarLike) -> types.ScalarLike:
 
     # express y_rot as a unit phasor
     z = np.exp(1j*y_rot * np.pi/180)
-    # rotate by a quarter turn to get to 0 rad in the +x direction,
-    # and then flip vertically to get everything in terms of the xz plane.
-    w = np.conj(1j*z)
-    return gm.angle(w)
+    # rotate by a quarter turn to get to 0 rad in the +x direction
+    return gm.angle(1j*z)
 
 def to_yrot(phi: types.ScalarLike) -> types.ScalarLike:
     """
@@ -41,10 +39,8 @@ def to_yrot(phi: types.ScalarLike) -> types.ScalarLike:
 
     # express phi as a unit phasor
     w = np.exp(1j*phi)
-    # since w = conj(j*z) = -j * conj(z),
-    # we get conj(z) = j*w, so z = conj(j*w)
-    z = np.conj(1j*w)
-    return gm.angle(z, deg=True)
+    # since w = j*z, z = -j*w
+    return gm.angle(1j*w, deg=True)
 
 def snap_chunk(p: types.Coordinates) -> types.Coordinates:
     """
