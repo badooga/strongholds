@@ -36,29 +36,26 @@ class Predict:
     def create_interpolator(self, player: types.Point, bins: int = 60) -> RegularGridInterpolator:
         """docstring"""
 
-        # isolate strongholds in specific rings
-        n = cm.closest_ring(player)
-        relevant_strongholds = self.heatmap[..., max(n, 0):n+1]
-
         # bin the coordinates
-        closest_strongholds = np.array([loc.closest_stronghold(player, relevant_strongholds)])
+        closest_strongholds = loc.closest_stronghold(player, self.heatmap)
         H, x_edges, z_edges = np.histogram2d(closest_strongholds.real,
                                             closest_strongholds.imag,
-                                            bins=bins, density=True)
+                                            bins=bins, density=False)
 
         # interpolate the result
         x_centers, z_centers = gm.bin_centers(x_edges), gm.bin_centers(z_edges)
         return RegularGridInterpolator((x_centers, z_centers), H.T,
-                                       bounds_error=False, fill_value=True)
+                                       bounds_error=False, fill_value=0)
 
     @staticmethod
     def normalize_probabilities(probpoints: types.PointProbs) -> types.PointProbs:
         """Normalizes the probabilities in a dictionary of point probabilities."""
 
-        total = fsum(probpoints.values())
+        filtered = {point: p for point, p in probpoints.items() if p}
+        total = fsum(filtered.values())
         if not total:
-            return probpoints
-        return {point: p/total for point, p in probpoints.items()}
+            return filtered
+        return {point: p/total for point, p in filtered.items()}
 
     def find_probabilities(self, player: types.Point, strongholds: types.Coordinates) -> types.PointProbs:
         """
@@ -96,8 +93,7 @@ class Predict:
             new_targets = np.fromiter(old_targets & new_targets, complex)
 
         # compute the probabilities for each grid point from just this throw
-        P = self.find_probabilities(player, new_targets)
-        new_throw = dict(zip(new_targets, P))
+        new_throw = self.find_probabilities(player, new_targets)
         self.individual_throws.append(new_throw)
 
         # if there are no other throws, we're done

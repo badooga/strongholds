@@ -21,7 +21,7 @@ def closest_stronghold(p: types.Coordinates,
     P = p[..., *N]
 
     # finds the mins along the last axis
-    m = gm.distance(s, P).amin(axis=-1, keepdims=True)
+    m = gm.distance(s, P).min(axis=-1, keepdims=True)
 
     # tiles s to have the same shape as m
     S = gm.np.tile(s, (*p.shape, *gm.np.ones_like(s.shape)))
