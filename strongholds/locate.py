@@ -1,6 +1,8 @@
-from . import math as gm, types
+from dataclasses import dataclass
 
-__all__ = ["closest_stronghold", "points_in_cone"]
+from . import chunk_math as cm, math as gm, types
+
+__all__ = ["closest_stronghold", "EyeThrow"]
 
 def closest_stronghold(p: types.Coordinates,
                        s: types.Coordinates | types.CoordinateSets) -> types.Coordinates:
@@ -29,28 +31,32 @@ def closest_stronghold(p: types.Coordinates,
     # identifies the strongholds in s that minimize |s - p|
     M = gm.np.where(gm.distance(S, P) == m, S, 0)
     return M.sum(axis=-1)
+@dataclass
+class EyeThrow:
+    """Stores the data of an Eye of Ender throw."""
 
-def points_in_cone(player: types.Point, grid: types.Coordinates,
-                   theta: types.ScalarLike, theta_err: types.ScalarLike = 0.05,
-                   error_is_relative: bool = False) -> types.Coordinates:
-    """
-    Finds the possible stronghold locations from an Eye of Ender throw.
-    
-    Keyword arguments:
-        `p`: the location of the player
-        `grid`: the possible stronghold grid points to consider (see `generation_grid`)
-        `theta`: the angle of the Eye of Ender throw
-        `theta_err`: the error of the throw
-        `error_is_relative`: whether `theta_err` is absolute or relative
-    """
+    location: types.Point
+    angle: types.Scalar
+    error: types.Scalar
 
-    grid_rel = grid - player
-    r, phi = gm.radius(grid_rel), gm.angle(grid_rel)
-    if error_is_relative:
-        theta_b, theta_a = theta * (1 + gm.pm * theta_err)
-    else:
-        theta_b, theta_a = theta + gm.pm * theta_err
+    def __post_init__(self) -> None:
+        # store rectangular and polar coordinates
+        self.x: types.Scalar = self.location.real
+        self.z: types.Scalar = self.location.imag
+        self.r: types.Scalar = gm.radius(self.location)
+        self.phi: types.Scalar = gm.angle(self.location)
 
-    target_mask = (r > 0) & gm.in_interval(phi, theta_a, theta_b)
+        # convert throw angle to radians
+        self.theta: types.Scalar = cm.to_radians(self.angle)
+        self.dtheta: types.Scalar = self.error * gm.np.pi/180
 
-    return grid[target_mask]
+        # store throw angle error interval
+        self.theta_a: types.Scalar = self.theta - self.dtheta
+        self.theta_b: types.Scalar = self.theta + self.dtheta
+
+    def points_in_cone(self, grid: types.Coordinates) -> types.Coordinates:
+        """Finds the possible grid locations the throw could be pointing towards."""
+
+        grid_phi = gm.angle(grid - self.location)
+        target_mask = gm.in_interval(grid_phi, self.theta_a, self.theta_b)
+        return grid[target_mask]
