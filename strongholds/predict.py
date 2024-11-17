@@ -51,7 +51,6 @@ class Predict:
         return RegularGridInterpolator((x_centers, z_centers), H.T,
                                        bounds_error=False, fill_value=True)
 
-
     @staticmethod
     def normalize_probabilities(probpoints: types.PointProbs) -> types.PointProbs:
         """Normalizes the probabilities in a dictionary of point probabilities."""
@@ -61,7 +60,7 @@ class Predict:
             return probpoints
         return {point: p/total for point, p in probpoints.items()}
 
-    def probability(self, player: types.Point, strongholds: types.Coordinates) -> types.PointProbs:
+    def find_probabilities(self, player: types.Point, strongholds: types.Coordinates) -> types.PointProbs:
         """
         Finds the probabilities that the given strongholds will be the nearest one to the player.
         """
@@ -97,7 +96,7 @@ class Predict:
             new_targets = np.fromiter(old_targets & new_targets, complex)
 
         # compute the probabilities for each grid point from just this throw
-        P = self.probability(player, new_targets)
+        P = self.find_probabilities(player, new_targets)
         new_throw = dict(zip(new_targets, P))
         self.individual_throws.append(new_throw)
 
