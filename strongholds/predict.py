@@ -27,7 +27,7 @@ class Probabilities(UserDict[types.Point, types.Scalar]):
         return np.array(list(self.values()))
 
     def remove_zeros(self) -> None:
-        for k, v in self.items():
+        for k, v in self.copy().items():
             if not v:
                 del self[k]
 
@@ -48,15 +48,14 @@ class Probabilities(UserDict[types.Point, types.Scalar]):
         self.normalize()
 
     def view(self, threshold: types.Scalar = 0):
-        items = [(k, v) for k, v in self.items() if v >= threshold]
-        return sorted(items, key=lambda i: i[1], reversed=True)
+        items = [((k.real, k.imag), v) for k, v in self.items() if v >= threshold]
+        return sorted(items, key=lambda i: i[1], reverse=True)
 
 class Predict:
     """Class for predicting where the closest stronghold will be."""
 
     def __init__(self, grid: types.Coordinates | None = None,
                  heatmap: types.CoordinateSets | None = None,
-                 max_distance: types.Scalar | None = None,
                  rng: types.Generator = gen.default_rng) -> None:
 
         if grid is None:
@@ -71,8 +70,7 @@ class Predict:
         self.individual_probs: list[Probabilities] = []
         self.cumulative_probs: Probabilities = []
 
-        if max_distance is None:
-            max_distance = gm.radius(self.heatmap).max()
+        self.interpolators: list[RegularGridInterpolator] = []
 
     def create_interpolator(self, player: types.Point, bins: int = 60) -> RegularGridInterpolator:
         """Creates an interpolator for the nearest strongholds to a point."""
@@ -85,7 +83,7 @@ class Predict:
 
         # interpolate the result
         x_centers, z_centers = gm.bin_centers(x_edges), gm.bin_centers(z_edges)
-        return RegularGridInterpolator((x_centers, z_centers), H.T,
+        return RegularGridInterpolator((x_centers, z_centers), H,
                                        bounds_error=False, fill_value=0)
 
     def find_probabilities(self, player: types.Point, strongholds: types.Coordinates) -> Probabilities:
@@ -94,6 +92,7 @@ class Predict:
         """
 
         interpolator = self.create_interpolator(player)
+        self.interpolators.append(interpolator)
         P = interpolator(gm.to_xz(strongholds))
 
         return Probabilities.from_arrays(strongholds, P)
@@ -124,5 +123,31 @@ class Predict:
         self.individual_probs.append(new_probs)
 
     def plot_throws(self, fig: graphing.Figure, ax: graphing.Axes):
-        pass
-        # TODO: graphing.flip_zaxis(ax)
+        players: types.Coordinates = np.array([throw.location for throw in self.throws])
+        scatter_players = ax.scatter(players.real, players.imag, marker="x", color="red")
+
+        t = np.linspace(0, gm.radius(self.heatmap).max())
+        #rays_0 = np.array([throw.location + gm.cis(throw.theta) * t
+        #                   for throw in self.throws]).squeeze()
+        rays_a = np.array([throw.location + gm.cis(throw.theta_a) * t
+                           for throw in self.throws]).squeeze()
+        rays_b = np.array([throw.location + gm.cis(throw.theta_b) * t
+                           for throw in self.throws]).squeeze()
+
+        scatter_grid = ax.scatter(self.grid.real, self.grid.imag,
+                                  s=1e-4, color="white")
+        scatter_intersection = ax.scatter(self.cumulative_probs.points.real,
+                                          self.cumulative_probs.points.imag,
+                                          s=100*self.cumulative_probs.probabilities,
+                                          color="green")
+
+        #plot_rays_0 = ax.plot(rays_0.real, rays_0.imag, lw=0.25, color="orange")
+        plot_rays_a = ax.plot(rays_a.real, rays_a.imag, lw=0.375, ls="--", color="orange")
+        plot_rays_b = ax.plot(rays_b.real, rays_b.imag, lw=0.375, ls="--", color="orange")
+
+        graphing.flip_zaxis(ax)
+
+        #return (scatter_players, plot_rays_0, plot_rays_a,
+        #        plot_rays_b, scatter_grid, scatter_intersection)
+        return (scatter_players, plot_rays_a, plot_rays_b,
+                scatter_grid, scatter_intersection)

@@ -61,7 +61,7 @@ def rotate(p: types.Coordinates, delta: types.ScalarLike,
            origin: types.Coordinates | None = 0) -> types.Coordinates:
     """
     Rotates a point by delta radians counterclockwise
-    about some origin point (or (0, 0), if not specified).
+    about some origin point (defaulting to the origin).
     """
 
     return origin + cis(delta) * (p - origin)
