@@ -47,13 +47,17 @@ class Probabilities(UserDict[types.Point, types.Scalar]):
             self.remove_zeros()
         self.normalize()
 
+    def view(self, threshold: types.Scalar = 0):
+        items = [(k, v) for k, v in self.items() if v >= threshold]
+        return sorted(items, key=lambda i: i[1], reversed=True)
+
 class Predict:
+    """Class for predicting where the closest stronghold will be."""
 
     def __init__(self, grid: types.Coordinates | None = None,
                  heatmap: types.CoordinateSets | None = None,
                  max_distance: types.Scalar | None = None,
                  rng: types.Generator = gen.default_rng) -> None:
-        """docstring"""
 
         if grid is None:
             grid = gen.generation_grid()
