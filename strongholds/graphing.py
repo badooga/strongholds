@@ -22,9 +22,7 @@ def xz_subplots(*args, **fkwargs) -> tuple[Figure, Axes]:
     kwargs.update(fkwargs)
 
     fig, ax = plt.subplots(*args, **kwargs)
-    ax = setup_xz_plot(ax)
-    if not ax.shape:
-        ax = ax.item()
+    ax = setup_xz_plot(ax).tolist()
     return fig, ax
 
 def flip_zaxis(*args: Axes) -> None:

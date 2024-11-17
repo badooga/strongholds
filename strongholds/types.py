@@ -1,4 +1,4 @@
-from typing import Callable, Iterable
+from typing import Callable, Iterable, Self
 
 import numpy as np
 import nptyping as npt
@@ -12,7 +12,6 @@ NSequence = npt.NDArray[npt.Shape["* n"], npt.Float]
 ScalarLike = Scalar | NSequence
 
 Point = complex | npt.Complex
-PointProbs = dict[Point, Scalar]
 
 Coordinates = Point | npt.NDArray[npt.Shape["*"], npt.Complex]
 CoordinateSets = npt.NDArray[npt.Shape["*, *"], npt.Complex]
