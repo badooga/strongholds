@@ -78,4 +78,4 @@ def unity_angles(n: int) -> types.NSequence:
 def bin_centers(bin_edges: types.NSequence) -> types.NSequence:
     """Converts histogram bin edges to bin centers."""
 
-    return (bin_edges[1:] + bin_edges[:1])/2
+    return (bin_edges[1:] + bin_edges[:-1])/2
