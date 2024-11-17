@@ -21,7 +21,8 @@ def generation_grid(ring_nums: types.Iterable | None = None, center: bool = Fals
     return grid[rings]
 
 def generate_ring(ring_num: int, snap: bool = True,
-                  rng: types.Generator = default_rng) -> types.Coordinates:
+                  rng: types.Generator = default_rng,
+                  center: bool = False) -> types.Coordinates:
     """Generates stronghold coordinates in a given ring."""
 
     n = cm.stronghold_count[ring_num]
@@ -35,7 +36,8 @@ def generate_ring(ring_num: int, snap: bool = True,
         # first, snaps biome to the nearest chunk origin
         P = cm.snap_chunk(P)
         # next, snaps to uniformly chosen biome center up to 7 chunks away
-        biome_snap = 16 * rng.integers(-7, 8, (2, n)) + 8
+        biome_snap = 16 * rng.integers(-7, 8, (2, n))
+        biome_snap += 8 if center else 0
         P += biome_snap[0] + 1j * biome_snap[1]
     return P
 
