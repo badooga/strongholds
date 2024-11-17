@@ -1,40 +1,11 @@
 from math import fsum
 
 import numpy as np
-from scipy.interpolate import NearestNDInterpolator
+from scipy.interpolate import RegularGridInterpolator
 
 from . import chunk_math as cm, generate as gen, locate as loc, math as gm, types
 
 __all__ = ["Predict"]
-
-# TODO: np.digitize? (https://stackoverflow.com/a/75727034)
-# alternatively: use np.histogramdd, and set bin number for r axis
-# to be the same as the number of r values
-# then take transpose to flip the axes properly
-# either way, **keep relevant_strongholds** filter
-@np.vectorize(excluded=[2], signature="(),(n,m)->(62,60)")
-def stronghold_histograms(p: types.Point, strongholds: types.Coordinates, bins: int = 60):
-    """Creates a 2D histogram of the closest strongholds to p."""
-
-    # filter out strongholds that aren't in a neighboring ring
-    player_ring = cm.closest_ring(p)
-    stronghold_rings = cm.closest_ring(strongholds)
-    relevant_strongholds = strongholds[gm.in_interval(stronghold_rings,
-                                                      player_ring - 1,
-                                                      player_ring + 1)]
-
-    # create 2D histogram
-    closest_strongholds = np.array([loc.closest_stronghold(p, relevant_strongholds)])
-    H, x_edges, z_edges = np.histogram2d(closest_strongholds.real,
-                                         closest_strongholds.imag,
-                                         bins=bins, density=False)
-
-    x_centers, z_centers = gm.bin_centers(x_edges), gm.bin_centers(z_edges)
-
-    # return counts and bin centers relative to p
-    return np.vstack((H.T, x_centers - p.real, z_centers - p.imag))
-
-#def _stronghold_histograms(p: types.Point)
 
 class Predict:
 
@@ -59,34 +30,27 @@ class Predict:
         self.individual_throws: list[types.PointProbs] = []
         self.cumulative_throw: types.PointProbs = {}
 
-
         if max_distance is None:
             max_distance = gm.radius(self.heatmap).max()
 
-        self.interpolator = self._create_interpolator(max_distance)
+    def create_interpolator(self, player: types.Point, bins: int = 60) -> RegularGridInterpolator:
+        """docstring"""
 
-    def _create_interpolator(self, r_max: types.Scalar, bins: int = 60) -> NearestNDInterpolator:
-        """
-        Creates a `NearestNDInterpolator` for the probability that a given
-        stronghold is the closest one to the player."""
+        # isolate strongholds in specific rings
+        n = cm.closest_ring(player)
+        relevant_strongholds = self.heatmap[..., max(n, 0):n+1]
 
-        # create linspace of player distances from origin
-        r = np.linspace(0, r_max, int(r_max/2))
+        # bin the coordinates
+        closest_strongholds = np.array([loc.closest_stronghold(player, relevant_strongholds)])
+        H, x_edges, z_edges = np.histogram2d(closest_strongholds.real,
+                                            closest_strongholds.imag,
+                                            bins=bins, density=True)
 
-        # compute histograms and separate relative x and z from vstack
-        out = stronghold_histograms(r, self.heatmap, bins)
-        counts, x, z = out[:, :bins, :], out[:, bins, :], out[:, bins+1, :]
+        # interpolate the result
+        x_centers, z_centers = gm.bin_centers(x_edges), gm.bin_centers(z_edges)
+        return RegularGridInterpolator((x_centers, z_centers), H.T,
+                                       bounds_error=False, fill_value=True)
 
-        # effectively create a 3D meshgrid of r, x, z
-        coords = np.zeros(shape=(*counts.shape, 3))
-        i, j, k = np.indices(counts.shape)
-        o = np.zeros_like(counts)
-
-        coords[i, j, k, 0] = (r[:, None, None] + o)[i, j, k]
-        coords[i, j, k, 1] = (x[:, :, None] + o)[i, j, k]
-        coords[i, j, k, 2] = (z[:, None, :] + o)[i, j, k]
-
-        return NearestNDInterpolator(coords.reshape(-1, 3), counts.ravel())
 
     @staticmethod
     def normalize_probabilities(probpoints: types.PointProbs) -> types.PointProbs:
@@ -99,19 +63,13 @@ class Predict:
 
     def probability(self, player: types.Point, strongholds: types.Coordinates) -> types.PointProbs:
         """
-        Finds the probability that the given strongholds will be the nearest one to the player.
+        Finds the probabilities that the given strongholds will be the nearest one to the player.
         """
 
-        r0, phi = gm.radius(player), gm.angle(player)
+        interpolator = self.create_interpolator(player)
+        P = interpolator(gm.to_xz(strongholds))
 
-        # relative coordinates
-        rel_coords = strongholds/gm.cis(phi) - r0
-
-        # compute and normalize probabilities
-        P = self.interpolator(r0, rel_coords.real, rel_coords.imag)
-        P /= fsum(P)
-
-        return dict(zip(strongholds, P))
+        return self.normalize_probabilities(dict(zip(strongholds, P)))
 
     def points_in_cone(self, player: types.Point,
                        angle: types.Scalar,
