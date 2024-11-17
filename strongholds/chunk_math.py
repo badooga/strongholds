@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 
 from . import types, math as gm
@@ -93,28 +95,26 @@ class Coordinates:
         # express phi as a unit phasor
         w = np.exp(1j*self.phi)
         # since w = j*z, z = -j*w
-        return gm.angle(1j*w, deg=True)
+        return gm.np.angle(1j*w, deg=True)
 
     @property
-    def chunk_corner(self) -> types.Self:
-        new_coords = self.coords / 8
-        return Coordinates.from_rect(8 * np.floor(new_coords.real),
-                                     8 * np.floor(new_coords.imag))
+    def chunk_corner(self) -> Coordinates:
+        return Coordinates(16 * (self.coords // 16))
 
     @property
-    def chunk_center(self) -> types.Self:
+    def chunk_center(self) -> Coordinates:
         new_coords = self.chunk_corner + (8. + 8.j)
         return Coordinates(new_coords)
 
     @property
-    def chunk_coords(self):
-        return Coordinates.from_rect(self.x % 16, self.z/16)
+    def chunk_coords(self) -> Coordinates:
+        return Coordinates.from_rect(self.x % 16, self.z % 16)
 
     def to_xz(self) -> types.CoordinateTuples:
         return np.array([[self.x], [self.z]]).T.squeeze()
 
     def rotate(self, delta: types.ScalarLike,
-               origin: types.Self | types.Point | types.Points = 0) -> None:
+               origin: Coordinates | types.Point | types.Points = 0) -> None:
         """
         Rotates a point by delta radians counterclockwise
         about some origin point (defaulting to the origin).
@@ -129,7 +129,7 @@ class Coordinates:
             return np.abs(self.coords - other)
 
     def in_nether(self) -> types.Self:
-        return np.floor(self.coords/8)
+        return Coordinates(self.coords // 8)
 
     def in_ring(self, ring_num: int | types.Iterable[int]) -> bool:
         """Checks whether coordinates are in the n-th stronghold ring."""
