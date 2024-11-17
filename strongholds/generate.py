@@ -38,12 +38,6 @@ def generate_ring(ring_num: int, snap: bool = True,
         biome_snap = 16 * rng.integers(-7, 8, (2, n))
         P.coords += biome_snap[0] + 1j * biome_snap[1]
 
-    if snap:
-        # first, snaps biome to the nearest chunk origin
-        P = P.chunk_corner
-        # next, snaps to uniformly chosen biome center up to 7 chunks away
-        biome_snap = 16 * rng.integers(-7, 8, (2, n))
-        P.coords += biome_snap[0] + 1j * biome_snap[1]
     return P
 
 def generate_rings(ring_nums: types.Iterable, snap: bool = True,
