@@ -127,11 +127,11 @@ class Predict:
         scatter_players = ax.scatter(players.real, players.imag, marker="x", color="red")
 
         t = np.linspace(0, np.abs(self.heatmap).max())
-        #rays_0 = np.array([throw.location + gm.cis(throw.theta) * t
+        #rays_0 = np.array([throw.location + throw.ray_0.coords * t
         #                   for throw in self.throws]).squeeze()
-        rays_a = np.array([throw.location.coords + np.exp(1j * throw.theta_a) * t
+        rays_a = np.array([throw.location.coords + throw.ray_a.coords * t
                            for throw in self.throws]).squeeze()
-        rays_b = np.array([throw.location.coords + np.exp(1j * throw.theta_b) * t
+        rays_b = np.array([throw.location.coords + throw.ray_b.coords * t
                            for throw in self.throws]).squeeze()
 
         scatter_grid = ax.scatter(self.grid.x, self.grid.z,

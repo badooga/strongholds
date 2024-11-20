@@ -17,8 +17,7 @@ def generation_grid(ring_nums: types.Iterable | None = None) -> cm.Coordinates:
     grid = cm.Coordinates.from_rect(X.flatten(), Z.flatten())
 
     rings = np.any([grid.in_ring(n) for n in ring_nums], axis=0)
-    grid.coords = grid.coords[rings]
-    return grid
+    return grid[rings]
 
 def generate_ring(ring_num: int, snap: bool = True,
                   rng: types.Generator = default_rng) -> cm.Coordinates:

@@ -24,12 +24,11 @@ def to_radians(y_rot: types.ScalarLike) -> types.ScalarLike:
     use `Ax.invert_yaxis()` to create an accurate image when plotting.
     """
 
-    ## we could just do phi = (-90 - y_rot) * pi/180, but
     ## we want to make sure that our result is in [-pi, pi).
     ## we do this by using np.angle, which automatically does that
 
     # express y_rot as a unit phasor
-    z = np.exp(1j*y_rot * np.pi/180)
+    z = gm.phasor(y_rot, True)
     # rotate by a quarter turn to get to 0 rad in the +x direction
     return gm.np.angle(1j*z)
 
@@ -40,7 +39,7 @@ def to_yrot(phi: types.ScalarLike) -> types.ScalarLike:
     """
 
     # express phi as a unit phasor
-    w = np.exp(1j*phi)
+    w = gm.phasor(phi)
     # since w = j*z, z = -j*w
     return gm.np.angle(-1j*w, deg=True)
 
@@ -55,21 +54,22 @@ class Coordinates:
     def __repr__(self) -> str:
         return str(self.coords)
 
+    def __getitem__(self, mask) -> Coordinates:
+        return Coordinates(self.coords[mask])
+
     @classmethod
     def from_rect(cls, x: types.ScalarLike, z: types.ScalarLike) -> types.Self:
         return cls(x + 1j * z)
 
     @classmethod
-    def from_polar(cls, r: types.ScalarLike, phi: types.ScalarLike) -> types.Self:
-        return cls(r * np.exp(1j * phi))
+    def from_polar(cls, r: types.ScalarLike,
+                   phi: types.ScalarLike,
+                   deg: bool = False) -> types.Self:
+        return cls(r * gm.phasor(phi, deg=deg))
 
     @classmethod
-    def phasor(cls, phi: types.ScalarLike):
-        return cls(np.exp(1j * phi))
-
-    @property
-    def size(self):
-        return self.coords.size
+    def phasor(cls, phi: types.ScalarLike, deg: bool = False) -> types.Self:
+        return cls.from_polar(1, phi, deg)
 
     @property
     def x(self) -> types.ScalarLike:
@@ -116,13 +116,14 @@ class Coordinates:
         return np.array([[self.x], [self.z]]).T.squeeze()
 
     def rotate(self, delta: types.ScalarLike,
-               origin: Coordinates | types.Point | types.Points = 0) -> None:
+               origin: Coordinates | types.Point | types.Points = 0,
+               deg: bool = False) -> None:
         """
-        Rotates a point by delta radians counterclockwise
+        Rotates a point by an angle delta counterclockwise
         about some origin point (defaulting to the origin).
         """
 
-        self.coords = origin + np.exp(1j * delta) * (self.coords - origin)
+        self.coords = origin + gm.phasor(delta, deg=deg) * (self.coords - origin)
 
     def distance(self, other) -> types.ScalarLike:
         try:

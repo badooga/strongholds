@@ -2,6 +2,12 @@ import numpy as np
 
 from . import types
 
+def phasor(phi: types.ScalarLike, deg: bool = False) -> types.ScalarLike:
+    """Computes the complex exponential exp(j*phi)."""
+
+    phi *= np.pi/180 if deg else 1
+    return np.exp(1j * phi)
+
 def in_interval(x: types.ScalarLike, a: types.ScalarLike, b: types.ScalarLike) -> bool:
     """
     Returns whether x is in the closed interval [m, M], where
