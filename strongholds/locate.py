@@ -58,7 +58,10 @@ class EyeThrow:
     def points_in_cone(self, grid: cm.Coordinates) -> cm.Coordinates:
         """Finds the possible grid locations the throw could be pointing towards."""
 
-        grid_phi = gm.np.angle(grid.coords - self.location.coords)
-        mask = gm.np.isclose(grid_phi, self.theta) | gm.in_interval(grid_phi, self.theta_a, self.theta_b)
+        # shift the grid to the eye throw location as its origin
+        # and the eye's direction being the real axis
+        grid_rel = grid.coords - self.location.coords
+        grid_rel = gm.Coordinates(grid_rel / gm.np.exp(1j * self.theta))
 
+        mask = grid_rel.r == 0 | gm.np.abs(grid_rel.phi) <= self.dtheta
         return cm.Coordinates(grid.coords[mask])
