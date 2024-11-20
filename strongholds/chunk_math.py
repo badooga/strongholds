@@ -47,7 +47,9 @@ def to_yrot(phi: types.ScalarLike) -> types.ScalarLike:
 class Coordinates:
     """Stores Minecraft coordinates and its relevant properties."""
 
-    def __init__(self, coords: types.Point | types.Points) -> None:
+    def __init__(self, coords: Coordinates | types.Point | types.Points) -> None:
+        if isinstance(coords, Coordinates):
+            coords = coords.coords
         self.coords = coords
 
     def __repr__(self) -> str:
@@ -99,11 +101,12 @@ class Coordinates:
 
     @property
     def chunk_corner(self) -> Coordinates:
-        return Coordinates(16 * (self.coords // 16))
+        x, z = self.x // 16, self.z // 16
+        return Coordinates.from_rect(16 * x, 16 * z)
 
     @property
     def chunk_center(self) -> Coordinates:
-        return self.chunk_corner + (8. + 8.j)
+        return Coordinates(self.chunk_corner.coords + (8. + 8.j))
 
     @property
     def chunk_coords(self) -> Coordinates:
@@ -127,8 +130,21 @@ class Coordinates:
         except AttributeError:
             return np.abs(self.coords - other)
 
+    def relative_to(self, other) -> Coordinates:
+        try:
+            rel = self.coords - other.coords
+        except AttributeError:
+            rel = self.coords - other
+        return Coordinates(rel)
+
+    def inner(self, other: Coordinates) -> types.ScalarLike:
+        return (self.coords.conj() * other.coords).real
+
+    def outer(self, other: Coordinates) -> types.ScalarLike:
+        return (self.coords.conj() * other.coords).imag
+
     def in_nether(self) -> types.Self:
-        return Coordinates(self.coords // 8)
+        return Coordinates.from_rect(self.x // 8, self.z // 8)
 
     def in_ring(self, ring_num: int | types.Iterable[int]) -> bool:
         """Checks whether coordinates are in the n-th stronghold ring."""
