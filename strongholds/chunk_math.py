@@ -103,8 +103,7 @@ class Coordinates:
 
     @property
     def chunk_center(self) -> Coordinates:
-        new_coords = self.chunk_corner + (8. + 8.j)
-        return Coordinates(new_coords)
+        return self.chunk_corner + (8. + 8.j)
 
     @property
     def chunk_coords(self) -> Coordinates:
