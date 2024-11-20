@@ -7,14 +7,15 @@ __all__ = ["Generator", "Scalar", "NSequence", "ScalarLike", "Point", "Points"]
 
 Generator = np.random.Generator
 
-Scalar = int | float | npt.Int | npt.Float
-NSequence = npt.NDArray[npt.Shape["* n"], npt.Float]
+Scalar = int | float | npt.Int32 | npt.Float64
+NSequence = npt.NDArray[npt.Shape["* n"], npt.Float64]
 ScalarLike = Scalar | NSequence
 
-Point = complex | npt.Complex
-Points = npt.NDArray[npt.Shape["*"], npt.Complex]
+Point = complex | npt.Complex128
+Points = npt.NDArray[npt.Shape["*"], npt.Complex128]
+PointLike = Point | Points
 
-CoordinateSets = npt.NDArray[npt.Shape["*, *"], npt.Complex]
+CoordinateSets = npt.NDArray[npt.Shape["*, *"], npt.Complex128]
 
-PointTuple = npt.NDArray[npt.Shape["[x, z]"], npt.Float]
-CoordinateTuples = PointTuple | npt.NDArray[npt.Shape["*, [x, z]"], npt.Float]
+PointTuple = npt.NDArray[npt.Shape["[x, z]"], npt.Float64]
+CoordinateTuples = PointTuple | npt.NDArray[npt.Shape["*, [x, z]"], npt.Float64]

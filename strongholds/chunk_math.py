@@ -46,10 +46,10 @@ def to_yrot(phi: types.ScalarLike) -> types.ScalarLike:
 class Coordinates:
     """Stores Minecraft coordinates and its relevant properties."""
 
-    def __init__(self, coords: Coordinates | types.Point | types.Points) -> None:
+    def __init__(self, coords: Coordinates | types.PointLike) -> None:
         if isinstance(coords, Coordinates):
             coords = coords.coords
-        self.coords = coords
+        self.coords: types.PointLike = coords
 
     def __repr__(self) -> str:
         return str(self.coords)
@@ -116,14 +116,16 @@ class Coordinates:
         return np.array([[self.x], [self.z]]).T.squeeze()
 
     def rotate(self, delta: types.ScalarLike,
-               origin: Coordinates | types.Point | types.Points = 0,
+               origin: Coordinates | None = None,
                deg: bool = False) -> None:
         """
         Rotates a point by an angle delta counterclockwise
         about some origin point (defaulting to the origin).
         """
-
-        self.coords = origin + gm.phasor(delta, deg=deg) * (self.coords - origin)
+        if origin is None:
+            self.coords *= gm.phasor(delta, deg=deg)
+        else:
+            self.coords = origin.coords + gm.phasor(delta, deg=deg) * (self.coords - origin.coords)
 
     def distance(self, other) -> types.ScalarLike:
         try:
@@ -144,7 +146,7 @@ class Coordinates:
     def outer(self, other: Coordinates) -> types.ScalarLike:
         return (self.coords.conj() * other.coords).imag
 
-    def in_nether(self) -> types.Self:
+    def in_nether(self) -> Coordinates:
         return Coordinates.from_rect(self.x // 8, self.z // 8)
 
     def in_ring(self, ring_num: int | types.Iterable[int]) -> bool:
