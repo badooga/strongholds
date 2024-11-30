@@ -110,7 +110,7 @@ class Coordinates:
 
     @property
     def chunk_coords(self) -> Coordinates:
-        return Coordinates.from_rect(self.x % 16, self.z % 16)
+        return Coordinates.from_rect(self.x // 16, self.z // 16)
 
     def to_xz(self) -> types.CoordinateTuples:
         return np.array([[self.x], [self.z]]).T.squeeze()
