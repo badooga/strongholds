@@ -31,3 +31,9 @@ def bin_centers(bin_edges: types.NSequence) -> types.NSequence:
     """Converts histogram bin edges to bin centers."""
 
     return (bin_edges[1:] + bin_edges[:-1])/2
+
+def normal(y: types.ScalarLike, mean: types.ScalarLike,
+           std: types.ScalarLike) -> types.ScalarLike:
+    """Computes the pdf for a normal distribution."""
+
+    return np.exp(-((y - mean)/std)**2/2)/np.sqrt(2*np.pi*std**2)

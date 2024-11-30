@@ -20,7 +20,7 @@ class Probabilities(UserDict[types.Point, types.Scalar]):
 
     @property
     def points(self) -> types.Points:
-        return np.array(list(self.keys()))
+        return cm.Coordinates(np.array(list(self.keys())))
 
     @property
     def probabilities(self) -> types.NSequence:
@@ -47,8 +47,12 @@ class Probabilities(UserDict[types.Point, types.Scalar]):
             self.remove_zeros()
         self.normalize()
 
-    def view(self, threshold: types.Scalar = 0):
-        items = [(cm.Coordinates(k), v) for k, v in self.items() if v >= threshold]
+    def view(self, threshold: types.Scalar = 0, chunk: bool = False):
+        if chunk:
+            items = [(cm.Coordinates(k).chunk_coords, v)
+                     for k, v in self.items() if v >= threshold]
+        else:
+            items = [(cm.Coordinates(k), v) for k, v in self.items() if v >= threshold]
         return sorted(items, key=lambda i: i[1], reverse=True)
 
 class Predict:
@@ -86,7 +90,9 @@ class Predict:
         return RegularGridInterpolator((x_centers, z_centers), H,
                                        bounds_error=False, fill_value=0)
 
-    def find_probabilities(self, player: cm.Coordinates, strongholds: cm.Coordinates) -> Probabilities:
+    def find_probabilities(self, player: cm.Coordinates,
+                           strongholds: cm.Coordinates,
+                           throw: loc.EyeThrow) -> Probabilities:
         """
         Finds the probabilities that the given strongholds will be the nearest one to the player.
         """
@@ -95,7 +101,10 @@ class Predict:
         self.interpolators.append(interpolator)
         P = interpolator(strongholds.to_xz())
 
-        return Probabilities.from_arrays(strongholds.coords, P)
+        epsilon = strongholds.relative_angle(throw.location, throw.ray_0)
+        error_factor = gm.normal(epsilon, 0, throw.dtheta)
+
+        return Probabilities.from_arrays(strongholds.coords, P * error_factor)
 
     def add_throw(self, player: types.Point,
                   angle: types.Scalar,
@@ -112,7 +121,7 @@ class Predict:
         new_targets = throw.points_in_cone(self.grid)
 
         # compute the probabilities for each grid point from just this throw
-        new_probs = self.find_probabilities(player, new_targets)
+        new_probs = self.find_probabilities(player, new_targets, throw)
 
         # find their intersection with previous throw grid points, if any
         # if there are old throws, multiply those probabilities and normalize
@@ -138,8 +147,8 @@ class Predict:
             plot_rays_a += ax.plot(ray_a.real, ray_a.imag, lw=0.375, ls="--", color="orange")
             plot_rays_b += ax.plot(ray_b.real, ray_b.imag, lw=0.375, ls="--", color="orange")
 
-        scatter_intersection = ax.scatter(self.cumulative_probs.points.real,
-                                          self.cumulative_probs.points.imag,
+        scatter_intersection = ax.scatter(self.cumulative_probs.points.x,
+                                          self.cumulative_probs.points.z,
                                           s=100*self.cumulative_probs.probabilities,
                                           color="green")
 

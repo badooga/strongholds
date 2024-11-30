@@ -147,6 +147,12 @@ class Coordinates:
             rel = self.coords - other
         return Coordinates(rel)
 
+    def relative_angle(self, other, direction: types.Self | None = None) -> types.ScalarLike:
+        rel_phi = self.relative_to(other).phi
+        if direction is not None:
+            rel_phi -= direction.phi
+        return rel_phi
+
     def inner(self, other: Coordinates) -> types.ScalarLike:
         return (self.coords.conj() * other.coords).real
 
