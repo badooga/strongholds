@@ -46,7 +46,7 @@ def to_yrot(phi: types.ScalarLike) -> types.ScalarLike:
 class Coordinates:
     """Stores Minecraft coordinates and its relevant properties."""
 
-    def __init__(self, coords: Coordinates | types.PointLike) -> None:
+    def __init__(self, coords: Coordinates | types.PointLike, center: bool = False) -> None:
         if isinstance(coords, Coordinates):
             coords = coords.coords
         self.coords: types.PointLike = coords
@@ -66,6 +66,13 @@ class Coordinates:
                    phi: types.ScalarLike,
                    deg: bool = False) -> types.Self:
         return cls(r * gm.phasor(phi, deg=deg))
+
+    @classmethod
+    def from_chunk(cls, cx: types.ScalarLike, cz: types.ScalarLike, center: bool = False) -> types.Self:
+        x, z  = 16 * cx, 16 * cz
+        if center:
+            return cls.from_rect(x + 8, z + 8)
+        return cls.from_rect(x, z)
 
     @classmethod
     def phasor(cls, phi: types.ScalarLike, deg: bool = False) -> types.Self:

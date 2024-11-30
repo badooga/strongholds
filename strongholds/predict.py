@@ -48,7 +48,7 @@ class Probabilities(UserDict[types.Point, types.Scalar]):
         self.normalize()
 
     def view(self, threshold: types.Scalar = 0):
-        items = [((k.real, k.imag), v) for k, v in self.items() if v >= threshold]
+        items = [(cm.Coordinates(k), v) for k, v in self.items() if v >= threshold]
         return sorted(items, key=lambda i: i[1], reverse=True)
 
 class Predict:
@@ -126,24 +126,22 @@ class Predict:
         players = np.array([throw.location.coords for throw in self.throws])
         scatter_players = ax.scatter(players.real, players.imag, marker="x", color="red")
 
-        t = np.linspace(0, np.abs(self.heatmap).max())
-        #rays_0 = np.array([throw.location + throw.ray_0.coords * t
-        #                   for throw in self.throws]).squeeze()
-        rays_a = np.array([throw.location.coords + throw.ray_a.coords * t
-                           for throw in self.throws]).squeeze()
-        rays_b = np.array([throw.location.coords + throw.ray_b.coords * t
-                           for throw in self.throws]).squeeze()
-
         scatter_grid = ax.scatter(self.grid.x, self.grid.z,
                                   s=1e-4, color="white")
+
+        t = np.linspace(0, np.abs(self.heatmap).max())
+        plot_rays_a = []
+        plot_rays_b = []
+        for throw in self.throws:
+            ray_a = throw.location.coords + throw.ray_a.coords * t
+            ray_b = throw.location.coords + throw.ray_b.coords * t
+            plot_rays_a += ax.plot(ray_a.real, ray_a.imag, lw=0.375, ls="--", color="orange")
+            plot_rays_b += ax.plot(ray_b.real, ray_b.imag, lw=0.375, ls="--", color="orange")
+
         scatter_intersection = ax.scatter(self.cumulative_probs.points.real,
                                           self.cumulative_probs.points.imag,
                                           s=100*self.cumulative_probs.probabilities,
                                           color="green")
-
-        #plot_rays_0 = ax.plot(rays_0.real, rays_0.imag, lw=0.25, color="orange")
-        plot_rays_a = ax.plot(rays_a.real, rays_a.imag, lw=0.375, ls="--", color="orange")
-        plot_rays_b = ax.plot(rays_b.real, rays_b.imag, lw=0.375, ls="--", color="orange")
 
         graphing.flip_zaxis(ax)
 
