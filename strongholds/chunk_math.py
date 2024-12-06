@@ -148,13 +148,13 @@ class Coordinates(np.ndarray):
 
     @property
     def chunk_center(self) -> types.Self:
-        return self.__class__(self.chunk_corner.coords + (8.0 + 8.0j))
+        return self.__class__(self.chunk_corner + (8.0 + 8.0j))
 
     @property
     def chunk_coords(self) -> types.Self:
         return self.__class__.from_rect(self.x // 16, self.z // 16)
 
-    def to_xz(self) -> types.CoordinateTuples:
+    def to_xz(self):
         return np.stack((self.x, self.y), -1)
 
     def rotate(self, delta: types.ScalarLike,

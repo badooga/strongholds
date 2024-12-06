@@ -14,8 +14,3 @@ ScalarLike = Scalar | NSequence
 Point = complex | npt.Complex128
 Points = npt.NDArray[npt.Shape["*"], npt.Complex128]
 PointLike = Point | Points
-
-CoordinateSets = npt.NDArray[npt.Shape["*, *"], npt.Complex128]
-
-PointTuple = npt.NDArray[npt.Shape["[x, z]"], npt.Float64]
-CoordinateTuples = PointTuple | npt.NDArray[npt.Shape["*, [x, z]"], npt.Float64]

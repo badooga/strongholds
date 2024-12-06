@@ -9,18 +9,19 @@ from . import chunk_math as cm, generate as gen, graphing, locate as loc, math a
 
 __all__ = ["Predict"]
 
+
 class Probabilities(UserDict[types.Point, types.Scalar]):
     """Class for storing stronghold probabilities."""
 
     @classmethod
-    def from_arrays(cls, points: types.Points, probabilities: types.NSequence) -> types.Self:
+    def from_arrays(cls, points: cm.Coordinates, probabilities: types.NSequence) -> types.Self:
         self = cls(dict(zip(points, probabilities)))
         self.normalize()
         return self
 
     @property
-    def points(self) -> types.Points:
-        return cm.Coordinates(np.array(list(self.keys())))
+    def points(self) -> cm.Coordinates:
+        return cm.Coordinates(list(self))
 
     @property
     def probabilities(self) -> types.NSequence:
@@ -33,33 +34,36 @@ class Probabilities(UserDict[types.Point, types.Scalar]):
 
     def normalize(self) -> None:
         self.remove_zeros()
-        total = self.probabilities.sum()
+        total = fsum(self.probabilities)
         if total:
             for k in self:
                 self[k] /= total
 
-    def __and__(self, other: types.Self) -> None:
-        self.data = {k: self[k] * other[k] for k in self.keys() & other.keys()}
+    def __and__(self, other: types.Self) -> types.Self:
+        return self.__class__({k: self[k] * other[k] for k in self.keys() & other.keys()})
 
     def intersection(self, *args: types.Self) -> None:
         for other in args:
-            self & other
+            self &= other
             self.remove_zeros()
         self.normalize()
 
-    def view(self, threshold: types.Scalar = 0, chunk: bool = False):
+    def view(self, threshold: types.Scalar = 0,
+             chunk: bool = False) -> list[tuple[cm.Coordinates, types.Scalar]]:
+
+        items = filter(lambda i: i[1] >= threshold, self.items())
+
         if chunk:
-            items = [(cm.Coordinates(k).chunk_coords, v)
-                     for k, v in self.items() if v >= threshold]
-        else:
-            items = [(cm.Coordinates(k), v) for k, v in self.items() if v >= threshold]
+            items = map(lambda i: (i[0].chunk_coords, i[1]), items)
+
         return sorted(items, key=lambda i: i[1], reverse=True)
+
 
 class Predict:
     """Class for predicting where the closest stronghold will be."""
 
     def __init__(self, grid: cm.Coordinates | None = None,
-                 heatmap: types.CoordinateSets | None = None,
+                 heatmap: cm.Coordinates | None = None,
                  rng: types.Generator = gen.default_rng) -> None:
 
         if grid is None:
@@ -82,8 +86,8 @@ class Predict:
         # bin the coordinates
         closest_strongholds = loc.closest_stronghold(player, self.heatmap)
         H, x_edges, z_edges = np.histogram2d(closest_strongholds.x,
-                                            closest_strongholds.z,
-                                            bins=bins, density=False)
+                                             closest_strongholds.z,
+                                             bins=bins, density=False)
 
         # interpolate the result
         x_centers, z_centers = gm.bin_centers(x_edges), gm.bin_centers(z_edges)
@@ -104,14 +108,16 @@ class Predict:
         epsilon = strongholds.relative_angle(throw.location, throw.ray_0)
         error_factor = gm.normal(epsilon, 0, throw.dtheta)
 
-        return Probabilities.from_arrays(strongholds.coords, P * error_factor)
+        return Probabilities.from_arrays(strongholds, P * error_factor)
 
-    def add_throw(self, player: types.Point,
+    def add_throw(self, player: types.Point | cm.Coordinates,
                   angle: types.Scalar,
                   angle_error: types.Scalar = 0.1) -> None:
         """
         Adds an Eye of Ender throw to the list of throws and computes the resulting probabilities.
         """
+
+        player = cm.Coordinates(player)
 
         # saves the throw data
         throw = loc.EyeThrow(player, angle, angle_error)
@@ -132,8 +138,9 @@ class Predict:
         self.individual_probs.append(new_probs)
 
     def plot_throws(self, fig: graphing.Figure, ax: graphing.Axes):
-        players = np.array([throw.location.coords for throw in self.throws])
-        scatter_players = ax.scatter(players.real, players.imag, marker="x", color="red")
+        players = cm.Coordinates([throw.location for throw in self.throws])
+        scatter_players = ax.scatter(players.x, players.z,
+                                     marker="x", color="red")
 
         scatter_grid = ax.scatter(self.grid.x, self.grid.z,
                                   s=1e-4, color="white")
@@ -142,10 +149,12 @@ class Predict:
         plot_rays_a = []
         plot_rays_b = []
         for throw in self.throws:
-            ray_a = throw.location.coords + throw.ray_a.coords * t
-            ray_b = throw.location.coords + throw.ray_b.coords * t
-            plot_rays_a += ax.plot(ray_a.real, ray_a.imag, lw=0.375, ls="--", color="orange")
-            plot_rays_b += ax.plot(ray_b.real, ray_b.imag, lw=0.375, ls="--", color="orange")
+            ray_a = throw.location + throw.ray_a * t
+            ray_b = throw.location + throw.ray_b * t
+            plot_rays_a += ax.plot(ray_a.x, ray_a.z,
+                                   lw=0.375, ls="--", color="orange")
+            plot_rays_b += ax.plot(ray_b.x, ray_b.z,
+                                   lw=0.375, ls="--", color="orange")
 
         scatter_intersection = ax.scatter(self.cumulative_probs.points.x,
                                           self.cumulative_probs.points.z,
@@ -154,7 +163,7 @@ class Predict:
 
         graphing.flip_zaxis(ax)
 
-        #return (scatter_players, plot_rays_0, plot_rays_a,
+        # return (scatter_players, plot_rays_0, plot_rays_a,
         #        plot_rays_b, scatter_grid, scatter_intersection)
         return (scatter_players, plot_rays_a, plot_rays_b,
                 scatter_grid, scatter_intersection)
