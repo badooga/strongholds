@@ -54,7 +54,7 @@ class Probabilities(UserDict[types.Point, types.Scalar]):
         items = filter(lambda i: i[1] >= threshold, self.items())
 
         if chunk:
-            items = map(lambda i: (i[0].chunk_coords, i[1]), items)
+            items = map(lambda i: (cm.Coordinates(i[0]).chunk_coords, i[1]), items)
 
         return sorted(items, key=lambda i: i[1], reverse=True)
 
