@@ -12,7 +12,7 @@ ring_centers = (inner_radii + outer_radii) / 2
 ring_radii = np.dstack((inner_radii, outer_radii)).flatten()
 
 
-def to_radians(y_rot: types.ScalarLike) -> types.ScalarLike:
+def to_phi(y_rot: types.ScalarLike) -> types.ScalarLike:
     """
     Converts Minecraft's y-rotation value to a polar angle in radians.
 
@@ -37,7 +37,7 @@ def to_radians(y_rot: types.ScalarLike) -> types.ScalarLike:
 def to_yrot(phi: types.ScalarLike) -> types.ScalarLike:
     """
     Converts a polar angle in the xz plane to a
-    Minecraft y-rotation value (see `to_radians`).
+    Minecraft y-rotation value (see `to_phi`).
     """
 
     # express phi as a unit phasor
@@ -133,7 +133,7 @@ class Coordinates(np.ndarray):
     @property
     def yrot(self) -> types.ScalarLike:
         """Converts a polar angle in the xz plane to a
-        Minecraft y-rotation value (see to_radians).
+        Minecraft y-rotation value (see to_phi).
         """
 
         # express phi as a unit phasor
@@ -157,9 +157,9 @@ class Coordinates(np.ndarray):
     def to_xz(self):
         return np.stack((self.x, self.y), -1)
 
-    def rotate(self, delta: types.ScalarLike,
+    def rotated(self, delta: types.ScalarLike,
                origin: Coordinates | None = None,
-               deg: bool = False) -> None:
+               deg: bool = False) -> types.Self:
         """Rotates the Coordinates by an angle delta about some origin point.
 
         Args:
@@ -172,7 +172,7 @@ class Coordinates(np.ndarray):
         if origin is None:
             origin = Coordinates(0)
 
-        self = origin + gm.phasor(delta, deg=deg) * (self - origin)
+        return origin + gm.phasor(delta, deg=deg) * (self - origin)
 
     def relative_angle(self, other, direction: types.Self | None = None) -> types.ScalarLike:
         rel_phi = (self - other).phi

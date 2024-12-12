@@ -44,7 +44,7 @@ class EyeThrow:
 
     def __post_init__(self) -> None:
         # convert throw angle to radians
-        self.theta: types.Scalar = cm.to_radians(self.angle)
+        self.theta: types.Scalar = cm.to_phi(self.angle)
         self.dtheta: types.Scalar = self.error * gm.np.pi/180
 
         # store throw angle error interval
@@ -61,8 +61,7 @@ class EyeThrow:
 
         # shift the grid to the eye throw location as its origin
         # with ray_0 as the positive real axis
-        grid_rel = grid - self.location
-        grid_rel.rotate(-self.theta)
+        grid_rel = (grid - self.location).rotated(-self.theta)
 
         # find when grid points are in cone
         mask = gm.np.isclose(grid_rel.r, 0) | (
