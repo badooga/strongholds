@@ -155,7 +155,7 @@ class Coordinates(np.ndarray):
         return self.__class__.from_rect(self.x // 16, self.z // 16)
 
     def to_xz(self):
-        return np.stack((self.x, self.y), -1)
+        return np.stack((self.x, self.z), -1)
 
     def rotated(self, delta: types.ScalarLike,
                origin: Coordinates | None = None,
