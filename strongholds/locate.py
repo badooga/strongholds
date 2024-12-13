@@ -56,7 +56,7 @@ class EyeThrow:
         self.ray_a = cm.Coordinates.from_polar(1, self.theta_a)
         self.ray_b = cm.Coordinates.from_polar(1, self.theta_b)
 
-    def points_in_cone(self, grid: cm.Coordinates) -> cm.Coordinates:
+    def points_in_cone(self, grid: cm.Coordinates, z_score: float = 3) -> cm.Coordinates:
         """Finds the possible grid locations the throw could be pointing towards."""
 
         # shift the grid to the eye throw location as its origin
@@ -65,7 +65,7 @@ class EyeThrow:
 
         # find when grid points are in cone
         mask = gm.np.isclose(grid_rel.r, 0) | (
-            gm.np.abs(grid_rel.phi) <= self.dtheta)
+            gm.np.abs(grid_rel.phi) <= z_score * self.dtheta)
 
         # apply mask
         return grid[mask]
