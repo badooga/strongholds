@@ -110,7 +110,7 @@ class Predict:
 
         # computes the error angle posterior distribution
         # by adding the throw error dtheta with the
-        # lateral error in quadrature
+        # lateral error in the third decimal place of x and z
         delta = 0.005/(3**0.5 * (strongholds - throw.location).r)
         sigma = np.hypot(throw.dtheta, delta)
 
