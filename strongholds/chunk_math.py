@@ -59,6 +59,9 @@ class Coordinates(np.ndarray):
         obj = np.asarray(coords, dtype=np.complex128).view(cls)
         return obj
 
+    def __repr__(self) -> str:
+        return self.to_xz().tolist().__repr__()
+
     @classmethod
     def from_rect(cls, x: types.ScalarLike, z: types.ScalarLike) -> types.Self:
         """Constructs the Coordinates from xz positions.
