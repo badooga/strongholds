@@ -27,17 +27,18 @@ class Probabilities(UserDict[types.Point, types.Scalar]):
     def probabilities(self) -> types.NSequence:
         return np.array(list(self.values()))
 
-    def remove_zeros(self) -> None:
+    def trim(self, threshold: types.Scalar = 0) -> None:
         for k, v in self.copy().items():
-            if not v:
+            if v <= threshold:
                 del self[k]
 
-    def normalize(self) -> None:
-        self.remove_zeros()
+    def normalize(self, threshold: types.Scalar = 1e-5) -> None:
         total = fsum(self.probabilities)
+        self.trim(threshold * total)
+        new_total = fsum(self.probabilities)
         if total:
             for k in self:
-                self[k] /= total
+                self[k] /= new_total
 
     def __and__(self, other: types.Self) -> types.Self:
         return self.__class__({k: self[k] * other[k] for k in self.keys() & other.keys()})
@@ -45,17 +46,18 @@ class Probabilities(UserDict[types.Point, types.Scalar]):
     def intersection(self, *args: types.Self) -> None:
         for other in args:
             self &= other
-            self.remove_zeros()
+            self.trim()
         self.normalize()
 
     def view(self, threshold: types.Scalar = 0,
              chunk: bool = False) -> list[tuple[cm.Coordinates, types.Scalar]]:
 
-        items = filter(lambda i: i[1] >= threshold, self.items())
+        copy = self.copy()
+        copy.normalize(threshold)
 
+        items = copy.items()
         if chunk:
-            items = map(lambda i: (cm.Coordinates(i[0]).chunk_coords, i[1]), items)
-
+            items = ((cm.Coordinates(k).chunk_coords, v) for k, v in items)
         return sorted(items, key=lambda i: i[1], reverse=True)
 
 
@@ -101,18 +103,26 @@ class Predict:
         Finds the probabilities that the given strongholds will be the nearest one to the player.
         """
 
+        # finds the probabilities before considering angle error
         interpolator = self.create_interpolator(player)
         self.interpolators.append(interpolator)
         P = interpolator(strongholds.to_xz())
 
-        epsilon = strongholds.relative_angle(throw.location, throw.ray_0)
-        error_factor = gm.normal(epsilon, 0, throw.dtheta)
+        # computes the error angle posterior distribution
+        # by adding the throw error dtheta with the
+        # lateral error in quadrature
+        delta = 0.005/(3**0.5 * (strongholds - throw.location).r)
+        sigma = np.hypot(throw.dtheta, delta)
 
-        return Probabilities.from_arrays(strongholds, P * error_factor)
+        epsilon = strongholds.relative_angle(throw.location, throw.ray_0)  
+        posterior = gm.normal(epsilon, 0, sigma)
+
+        return Probabilities.from_arrays(strongholds, P * posterior)
 
     def add_throw(self, player: types.Point | cm.Coordinates,
                   angle: types.Scalar,
-                  angle_error: types.Scalar = 0.1) -> None:
+                  angle_error: types.Scalar = 0.1,
+                  z_score: float = 3) -> None:
         """
         Adds an Eye of Ender throw to the list of throws and computes the resulting probabilities.
         """
@@ -124,7 +134,7 @@ class Predict:
         self.throws.append(throw)
 
         # finds the possible grid points for this throw
-        new_targets = throw.points_in_cone(self.grid)
+        new_targets = throw.points_in_cone(self.grid, z_score)
 
         # compute the probabilities for each grid point from just this throw
         new_probs = self.find_probabilities(player, new_targets, throw)
