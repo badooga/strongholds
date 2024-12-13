@@ -44,7 +44,7 @@ def normal(y: types.ScalarLike, mean: types.ScalarLike,
     return np.exp(-((y - mean)/std)**2 / 2)/np.sqrt(2 * np.pi * std**2)
 
 
-class Coordinates(np.ndarray):
+class Coordinates2D(np.ndarray):
     """Stores 2D points in complex form."""
 
     def __new__(cls, coords: types.Self | types.PointLike) -> types.Self:
@@ -58,7 +58,7 @@ class Coordinates(np.ndarray):
         return obj
 
     def __repr__(self) -> str:
-        return self.to_xz().tolist().__repr__()
+        return self.to_xz().__repr__()
 
     @classmethod
     def from_rect(cls, x: types.ScalarLike, z: types.ScalarLike) -> types.Self:

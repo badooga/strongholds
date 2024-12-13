@@ -45,8 +45,11 @@ def to_yrot(phi: types.ScalarLike) -> types.ScalarLike:
     # since w = j*z, z = -j*w
     return gm.np.angle(-1j * w, deg=True)
 
-class MCoordinates(gm.Coordinates):
+class MCoordinates(gm.Coordinates2D):
     """Stores Minecraft coordinates and their relevant properties."""
+
+    def __repr__(self) -> str:
+        return self.to_xz().tolist().__repr__()
 
     @classmethod
     def from_chunk(cls, cx: types.ScalarLike,
