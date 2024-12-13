@@ -9,7 +9,7 @@ __all__ = ["generation_grid", "generate_ring",
 
 
 def generation_grid(ring_nums: types.Iterable | None = None,
-                    center: bool = False) -> cm.Coordinates:
+                    center: bool = False) -> cm.MCoordinates:
     """Returns a grid of possible stronghold points in the supplied rings."""
 
     if ring_nums is None:
@@ -20,7 +20,7 @@ def generation_grid(ring_nums: types.Iterable | None = None,
     if center:
         X += 8
         Z += 8
-    grid = cm.Coordinates.from_rect(X.flatten(), Z.flatten())
+    grid = cm.MCoordinates.from_rect(X.flatten(), Z.flatten())
 
     rings = np.any([grid.in_ring(n) for n in ring_nums], axis=0)
     return grid[rings]
@@ -28,7 +28,7 @@ def generation_grid(ring_nums: types.Iterable | None = None,
 
 def generate_ring(ring_num: int, snap: bool = True,
                   rng: types.Generator = default_rng,
-                  center: bool = False) -> cm.Coordinates:
+                  center: bool = False) -> cm.MCoordinates:
     """Generates stronghold coordinates in a given ring."""
 
     n = cm.stronghold_count[ring_num]
@@ -36,30 +36,30 @@ def generate_ring(ring_num: int, snap: bool = True,
 
     r = rng.uniform(a, b, n)
     phi = rng.uniform(0, 2*np.pi) + gm.unity_angles(n)
-    P = cm.Coordinates.from_polar(r, phi)
+    P = cm.MCoordinates.from_polar(r, phi)
 
     if snap:
         # first, snaps biome to the nearest chunk origin
         P = P.chunk_center if center else P.chunk_corner
         # next, snaps to uniformly chosen biome center up to 7 chunks away
         biome_snap = rng.integers(-7, 8, (2, n))
-        P += cm.Coordinates.from_chunk(*biome_snap)
+        P += cm.MCoordinates.from_chunk(*biome_snap)
 
     return P
 
 
 def generate_rings(ring_nums: types.Iterable, snap: bool = True,
                    rng: types.Generator = default_rng,
-                   center: bool = False) -> cm.Coordinates:
+                   center: bool = False) -> cm.MCoordinates:
     """Generates stronghold coordinates in given rings."""
 
-    return cm.Coordinates(np.concatenate([generate_ring(n, snap, rng, center)
+    return cm.MCoordinates(np.concatenate([generate_ring(n, snap, rng, center)
                                           for n in ring_nums]))
 
 
 def generate_all(snap: bool = True,
                  rng: types.Generator = default_rng,
-                 center: bool = False) -> cm.Coordinates:
+                 center: bool = False) -> cm.MCoordinates:
     """Generates all 128 random strongholds a world can have."""
 
     return generate_rings(range(8), snap, rng, center)
@@ -70,7 +70,7 @@ def generation_heatmap(num_samples: int = 10**6,
                        rng: types.Generator = default_rng,
                        snap: bool = True, concatenate: bool = True,
                        center: bool = False
-                       ) -> cm.Coordinates:
+                       ) -> cm.MCoordinates:
     """
     For the supplied ring numbers, generates those rings
     the supplied number of times and return the result.
@@ -86,4 +86,4 @@ def generation_heatmap(num_samples: int = 10**6,
     if concatenate:
         stronghold_samples = np.concatenate(stronghold_samples)
 
-    return cm.Coordinates(stronghold_samples)
+    return cm.MCoordinates(stronghold_samples)

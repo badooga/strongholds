@@ -45,53 +45,14 @@ def to_yrot(phi: types.ScalarLike) -> types.ScalarLike:
     # since w = j*z, z = -j*w
     return gm.np.angle(-1j * w, deg=True)
 
-
-class Coordinates(np.ndarray):
-    """Stores Minecraft coordinates and its relevant properties."""
-
-    def __new__(cls, coords: Coordinates | types.PointLike) -> types.Self:
-        """Constructs the Coordinates from complex data.
-
-        Args:
-            coords (Coordinates | PointLike): The coordinates in complex form.
-        """
-
-        obj = np.asarray(coords, dtype=np.complex128).view(cls)
-        return obj
-
-    def __repr__(self) -> str:
-        return self.to_xz().tolist().__repr__()
-
-    @classmethod
-    def from_rect(cls, x: types.ScalarLike, z: types.ScalarLike) -> types.Self:
-        """Constructs the Coordinates from xz positions.
-
-        Args:
-            x (ScalarLike): The x coordinates.
-            z (ScalarLike): The z coordinates.
-        """
-
-        return cls(x + 1j * z)
-
-    @classmethod
-    def from_polar(cls, r: types.ScalarLike,
-                   phi: types.ScalarLike,
-                   deg: bool = False) -> types.Self:
-        """Constructs the Coordinates from the radius and x/z angle.
-
-        Args:
-            r (ScalarLike): The distance from the origin.
-            phi (ScalarLike): The polar angle between the x and z axes.
-            deg (bool, optional): Whether to consider phi in degrees. Defaults to False.
-        """
-
-        return cls(r * gm.phasor(phi, deg=deg))
+class MCoordinates(gm.Coordinates):
+    """Stores Minecraft coordinates and their relevant properties."""
 
     @classmethod
     def from_chunk(cls, cx: types.ScalarLike,
                    cz: types.ScalarLike,
                    center: bool = False) -> types.Self:
-        """Constructs the Coordinates from the chunk coordinates.
+        """Constructs the Coordinates from chunk numbers.
 
         Args:
             cx (ScalarLike): The chunk number along the x axis.
@@ -102,36 +63,7 @@ class Coordinates(np.ndarray):
         """
 
         n = 8 if center else 0
-        return cls.from_rect(16*cx + n, 16*cz + 8)
-
-    @property
-    def coords(self) -> types.PointLike:
-        """Gets the underlying data of the array.
-
-        Returns:
-            PointLike: A regular NumPy array of the coordinates.
-        """
-
-        coords = self.__array__()
-        if not coords.shape:
-            coords = coords.item()
-        return np.complex128(coords)
-
-    @property
-    def x(self) -> types.ScalarLike:
-        return self.coords.real
-
-    @property
-    def z(self) -> types.ScalarLike:
-        return self.coords.imag
-
-    @property
-    def r(self) -> types.ScalarLike:
-        return np.abs(self.coords)
-
-    @property
-    def phi(self) -> types.ScalarLike:
-        return np.angle(self.coords)
+        return cls.from_rect(16*cx + n, 16*cz + n)
 
     @property
     def yrot(self) -> types.ScalarLike:
@@ -157,40 +89,11 @@ class Coordinates(np.ndarray):
     def chunk_coords(self) -> types.Self:
         return self.__class__.from_rect(self.x // 16, self.z // 16)
 
-    def to_xz(self):
-        return np.stack((self.x, self.z), -1)
-
-    def rotated(self, delta: types.ScalarLike,
-               origin: Coordinates | None = None,
-               deg: bool = False) -> types.Self:
-        """Rotates the Coordinates by an angle delta about some origin point.
-
-        Args:
-            delta (ScalarLike): The counterclockwise angle to rotate by in the xz plane.
-            origin (Coordinates | None, optional): The point to rotate
-            around. Defaults to None (the origin).
-            deg (bool, optional): Whether to consider delta in degrees. Defaults to False.
-        """
-
-        if origin is None:
-            origin = Coordinates(0)
-
-        return origin + gm.phasor(delta, deg=deg) * (self - origin)
-
-    def relative_angle(self, other, direction: types.Self | None = None) -> types.ScalarLike:
-        rel_phi = (self - other).phi
-        if direction is not None:
-            rel_phi -= direction.phi
-        return rel_phi
-
-    def inner(self, other) -> types.ScalarLike:
-        return (self.conj() * other).data.real
-
-    def outer(self, other) -> types.ScalarLike:
-        return (self.conj() * other).data.imag
-
-    def in_nether(self) -> types.Self:
-        return self.__class__.from_rect(self.x // 8, self.z // 8)
+    def in_nether(self, chunk: bool = False) -> types.Self:
+        nether_coords = self.__class__.from_rect(self.x // 8, self.z // 8)
+        if chunk:
+            return nether_coords.chunk_coords
+        return nether_coords
 
     def in_ring(self, ring_num: int | types.Iterable[int]) -> bool:
         """Checks whether coordinates are in the n-th stronghold ring."""

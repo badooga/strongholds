@@ -5,9 +5,9 @@ from . import chunk_math as cm, math as gm, types
 __all__ = ["closest_stronghold", "EyeThrow"]
 
 
-def closest_stronghold(p: cm.Coordinates,
-                       s: cm.Coordinates
-                       ) -> cm.Coordinates:
+def closest_stronghold(p: cm.MCoordinates,
+                       s: cm.MCoordinates
+                       ) -> cm.MCoordinates:
     """
     Finds the closest stronghold from coordinates `s` to the player `p`.
 
@@ -31,14 +31,14 @@ def closest_stronghold(p: cm.Coordinates,
 
     # identifies the strongholds in s that minimize |s - p|
     M = gm.np.where((S - P).r == m, S, 0)
-    return cm.Coordinates(M.sum(axis=-1))
+    return cm.MCoordinates(M.sum(axis=-1))
 
 
 @dataclass
 class EyeThrow:
     """Stores the data of an Eye of Ender throw."""
 
-    location: cm.Coordinates
+    location: cm.MCoordinates
     angle: types.Scalar
     error: types.Scalar
 
@@ -52,11 +52,11 @@ class EyeThrow:
         self.theta_b: types.Scalar = self.theta + self.dtheta
 
         # stores unit vectors for "throw cone"
-        self.ray_0 = cm.Coordinates.from_polar(1, self.theta)
-        self.ray_a = cm.Coordinates.from_polar(1, self.theta_a)
-        self.ray_b = cm.Coordinates.from_polar(1, self.theta_b)
+        self.ray_0 = cm.MCoordinates.from_polar(1, self.theta)
+        self.ray_a = cm.MCoordinates.from_polar(1, self.theta_a)
+        self.ray_b = cm.MCoordinates.from_polar(1, self.theta_b)
 
-    def points_in_cone(self, grid: cm.Coordinates, z_score: float = 3) -> cm.Coordinates:
+    def points_in_cone(self, grid: cm.MCoordinates, z_score: float = 3) -> cm.MCoordinates:
         """Finds the possible grid locations the throw could be pointing towards."""
 
         # shift the grid to the eye throw location as its origin

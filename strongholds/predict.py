@@ -14,14 +14,14 @@ class Probabilities(UserDict[types.Point, types.Scalar]):
     """Class for storing stronghold probabilities."""
 
     @classmethod
-    def from_arrays(cls, points: cm.Coordinates, probabilities: types.NSequence) -> types.Self:
+    def from_arrays(cls, points: cm.MCoordinates, probabilities: types.NSequence) -> types.Self:
         self = cls(dict(zip(points, probabilities)))
         self.normalize()
         return self
 
     @property
-    def points(self) -> cm.Coordinates:
-        return cm.Coordinates(list(self))
+    def points(self) -> cm.MCoordinates:
+        return cm.MCoordinates(list(self))
 
     @property
     def probabilities(self) -> types.NSequence:
@@ -50,22 +50,22 @@ class Probabilities(UserDict[types.Point, types.Scalar]):
         self.normalize()
 
     def view(self, threshold: types.Scalar = 0,
-             chunk: bool = False) -> list[tuple[cm.Coordinates, types.Scalar]]:
+             chunk: bool = False) -> list[tuple[cm.MCoordinates, types.Scalar]]:
 
         copy = self.copy()
         copy.normalize(threshold)
 
         items = copy.items()
         if chunk:
-            items = ((cm.Coordinates(k).chunk_coords, v) for k, v in items)
+            items = ((cm.MCoordinates(k).chunk_coords, v) for k, v in items)
         return sorted(items, key=lambda i: i[1], reverse=True)
 
 
 class Predict:
     """Class for predicting where the closest stronghold will be."""
 
-    def __init__(self, grid: cm.Coordinates | None = None,
-                 heatmap: cm.Coordinates | None = None,
+    def __init__(self, grid: cm.MCoordinates | None = None,
+                 heatmap: cm.MCoordinates | None = None,
                  rng: types.Generator = gen.default_rng) -> None:
 
         if grid is None:
@@ -82,7 +82,7 @@ class Predict:
 
         self.interpolators: list[RegularGridInterpolator] = []
 
-    def create_interpolator(self, player: cm.Coordinates, bins: int = 60) -> RegularGridInterpolator:
+    def create_interpolator(self, player: cm.MCoordinates, bins: int = 60) -> RegularGridInterpolator:
         """Creates an interpolator for the nearest strongholds to a point."""
 
         # bin the coordinates
@@ -96,8 +96,8 @@ class Predict:
         return RegularGridInterpolator((x_centers, z_centers), H,
                                        bounds_error=False, fill_value=0)
 
-    def find_probabilities(self, player: cm.Coordinates,
-                           strongholds: cm.Coordinates,
+    def find_probabilities(self, player: cm.MCoordinates,
+                           strongholds: cm.MCoordinates,
                            throw: loc.EyeThrow) -> Probabilities:
         """
         Finds the probabilities that the given strongholds will be the nearest one to the player.
@@ -119,7 +119,7 @@ class Predict:
 
         return Probabilities.from_arrays(strongholds, P * posterior)
 
-    def add_throw(self, player: types.Point | cm.Coordinates,
+    def add_throw(self, player: types.Point | cm.MCoordinates,
                   angle: types.Scalar,
                   angle_error: types.Scalar = 0.1,
                   z_score: float = 3) -> None:
@@ -127,7 +127,7 @@ class Predict:
         Adds an Eye of Ender throw to the list of throws and computes the resulting probabilities.
         """
 
-        player = cm.Coordinates(player)
+        player = cm.MCoordinates(player)
 
         # saves the throw data
         throw = loc.EyeThrow(player, angle, angle_error)
@@ -148,7 +148,7 @@ class Predict:
         self.individual_probs.append(new_probs)
 
     def plot_throws(self, fig: graphing.Figure, ax: graphing.Axes):
-        players = cm.Coordinates([throw.location for throw in self.throws])
+        players = cm.MCoordinates([throw.location for throw in self.throws])
         scatter_players = ax.scatter(players.x, players.z,
                                      marker="x", color="red")
 
