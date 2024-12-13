@@ -106,6 +106,9 @@ class Coordinates2D(np.ndarray):
     def z(self) -> types.ScalarLike:
         return self.coords.imag
 
+    def to_xz(self):
+        return np.stack((self.x, self.z), -1)
+
     @property
     def r(self) -> types.ScalarLike:
         return np.abs(self.coords)
@@ -113,9 +116,6 @@ class Coordinates2D(np.ndarray):
     @property
     def phi(self) -> types.ScalarLike:
         return np.angle(self.coords)
-
-    def to_xz(self):
-        return np.stack((self.x, self.z), -1)
 
     def rotated(self, delta: types.ScalarLike,
                 origin: types.Self | None = None,
@@ -134,13 +134,13 @@ class Coordinates2D(np.ndarray):
         return origin + phasor(delta, deg=deg) * (self - origin)
 
     def relative_angle(self, other, direction: types.Self | None = None) -> types.ScalarLike:
-        rel_phi = (self - other).phi
+        rel = self - other
         if direction is not None:
-            rel_phi -= direction.phi
-        return rel_phi
+            rel = rel.rotated(-1 * direction.phi)
+        return rel.phi
 
     def inner(self, other) -> types.ScalarLike:
-        return (self.conj() * other).data.real
+        return (self.conj() * other).x
 
     def outer(self, other) -> types.ScalarLike:
-        return (self.conj() * other).data.imag
+        return (self.conj() * other).z
