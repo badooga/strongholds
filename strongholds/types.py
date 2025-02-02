@@ -3,7 +3,7 @@ from typing import Callable, Iterable, Self
 import numpy as np
 import nptyping as npt
 
-__all__ = ["Generator", "Scalar", "NSequence", "ScalarLike", "Point", "Points"]
+__all__ = ["Callable", "Iterable", "Self", "Generator", "Scalar", "NSequence", "ScalarLike", "Point", "Points"]
 
 Generator = np.random.Generator
 
